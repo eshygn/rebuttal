@@ -126,7 +126,7 @@ export function baseFacts(c: CaseFile): Facts {
 export function evidenceBytes(e: EvidenceRow): Buffer | null {
   if (!e.file) return null;
   const p = e.file.startsWith("/uploads/")
-    ? path.join(process.cwd(), "data", e.file)
+    ? path.join(process.cwd(), "data", "uploads", e.file.slice("/uploads/".length))
     : path.join(process.cwd(), "public", e.file);
   return fs.existsSync(p) ? fs.readFileSync(p) : null;
 }

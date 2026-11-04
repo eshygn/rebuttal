@@ -100,12 +100,18 @@ export function DisputeDetail({ d, clock, onChanged, approveRef, setBusy, busy }
           </button>
         </div>
       )}
+      {!a && s.stage === "new" && (
+        <div style={{ marginTop: 16 }}>
+          <EvidenceFiles d={d} run={run} busy={busy} onZoom={setLightbox} />
+        </div>
+      )}
 
       {a && (
         <div className="grid2">
           <div className="stack">
-            <Trace a={a} />
+            <Trace a={a} onRerun={s.stage === "ready" ? () => run(() => api(`/api/disputes/${s.id}/analyse`, {})) : undefined} busy={busy} />
             {r && <Checklist r={r} />}
+            {(s.stage === "ready" || s.stage === "new") && <EvidenceFiles d={d} run={run} busy={busy} onZoom={setLightbox} />}
           </div>
           <div className="stack">
             {r ? <Verdict d={d} /> : <Thinking />}
@@ -185,14 +191,25 @@ function traceSub(t: TraceStep): string | null {
   return null;
 }
 
-function Trace({ a }: { a: NonNullable<Detail["analysis"]> }) {
+function Trace({ a, onRerun, busy }: { a: NonNullable<Detail["analysis"]>; onRerun?: () => void; busy: boolean }) {
   return (
     <div className="card">
       <div className="card-h">
         <h3>Agent at work</h3>
-        <span className={`chip ${a.aiMode === "live" ? "live" : "recorded"}`} title={a.note ?? undefined}>
+        {onRerun && (
+          <button className="btn ghost" style={{ padding: "2px 6px", fontSize: 12 }} disabled={busy} onClick={onRerun}>
+            ↻ Re-run
+          </button>
+        )}
+        <span className={`chip ${a.aiMode === "live" || a.aiMode === "cached" ? "live" : "recorded"}`} title={a.note ?? undefined}>
           <span className="dot" />
-          {a.aiMode === "live" ? `Gemini live · ${a.model ?? ""}` : a.aiMode === "recorded" ? `Recorded Gemini run · ${a.model ?? ""}` : "Rules only"}
+          {a.aiMode === "live"
+            ? `Gemini live · ${a.model ?? ""}`
+            : a.aiMode === "cached"
+              ? `Gemini · cached run · ${a.model ?? ""}`
+              : a.aiMode === "recorded"
+                ? `Recorded Gemini run · ${a.model ?? ""}`
+                : "Rules only"}
         </span>
       </div>
       <ul className="trace">
@@ -539,6 +556,94 @@ function Resolved({ d }: { d: Detail }) {
               : "The buyer was refunded. Rebuttal closed it quickly so it doesn’t drag on."}
           {" "}PayPal outcome: <span className="mono">{s.outcome}</span>
         </p>
+      </div>
+    </div>
+  );
+}
+
+const KIND_LABEL: Record<string, string> = {
+  carrier_document: "Carrier proof",
+  listing: "Listing text",
+  listing_photo: "Listing photo",
+  item_photo: "Photo before shipping",
+  buyer_photo: "Buyer’s photo",
+  buyer_message: "Messages",
+  return_policy: "Return policy",
+};
+
+function EvidenceFiles({
+  d,
+  run,
+  busy,
+  onZoom,
+}: {
+  d: Detail;
+  run: (fn: () => Promise<unknown>) => Promise<void>;
+  busy: boolean;
+  onZoom: (src: string) => void;
+}) {
+  const [kind, setKind] = useState("carrier_document");
+  async function upload(file: File) {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("kind", kind);
+    await run(async () => {
+      const r = await fetch(`/api/disputes/${d.summary.id}/evidence`, { method: "POST", body: fd });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error);
+    });
+  }
+  return (
+    <div className="card">
+      <div className="card-h">
+        <h3>Your evidence on file</h3>
+        <span className="muted small">{d.evidence.length} items</span>
+      </div>
+      <ul className="checks">
+        {d.evidence.map((e) => (
+          <li key={e.id}>
+            <span className="mark present">{e.file ? (e.mime === "application/pdf" ? "▤" : "▣") : "≡"}</span>
+            <div>
+              <div className="c-label">{e.title}</div>
+              <div className="c-why">
+                {KIND_LABEL[e.kind] ?? e.kind}
+                {e.text ? ` · ${e.text.slice(0, 90)}${e.text.length > 90 ? "…" : ""}` : ""}
+              </div>
+            </div>
+            {e.file && e.mime !== "application/pdf" ? (
+              <button className="btn ghost" style={{ padding: "2px 6px", fontSize: 12 }} onClick={() => onZoom(e.file!)}>
+                View
+              </button>
+            ) : e.file ? (
+              <a className="btn ghost" style={{ padding: "2px 6px", fontSize: 12 }} href={e.file} target="_blank" rel="noreferrer">
+                Open
+              </a>
+            ) : (
+              <span />
+            )}
+          </li>
+        ))}
+      </ul>
+      <div className="offerin" style={{ marginTop: 10, flexWrap: "wrap" }}>
+        <select value={kind} onChange={(e) => setKind(e.target.value)} className="btn" aria-label="Evidence type">
+          <option value="carrier_document">Carrier screenshot or PDF</option>
+          <option value="item_photo">Photo of the item before shipping</option>
+        </select>
+        <label className="btn" style={{ opacity: busy ? 0.55 : 1 }}>
+          Add file…
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp,application/pdf"
+            hidden
+            disabled={busy}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) void upload(f);
+            }}
+          />
+        </label>
+        <span className="muted small">Then re-run the analysis. Gemini reads new files live.</span>
       </div>
     </div>
   );
