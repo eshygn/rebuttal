@@ -52,6 +52,7 @@ export function TopBar({ state, page, onJump, onReset, onOpenLog, busy }: Props)
         <span className={`chip ${pp.mode}`} title={pp.detail}>
           <span className="dot" />
           PayPal: {pp.mode === "live" ? "sandbox live" : "mock"}
+          {pp.warning && <b style={{ color: "var(--sim)" }} aria-label="Configuration warning"> ⚠</b>}
         </span>
       )}
       {ai && (

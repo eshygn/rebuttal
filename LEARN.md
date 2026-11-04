@@ -236,7 +236,7 @@ More choices are in [DECISIONS.md](DECISIONS.md).
 - the PayPal JS SDK buttons rendering on `/shop`.
 
 **Not yet run live:**
-- a dispute's full lifecycle (evidence, offer, adjudication, buyer accepting). It needs a payment made by the sandbox buyer.
+- a dispute's full lifecycle (evidence, offer, adjudication, buyer accepting). The one transaction tried (4 Nov) was refused, because it went from the shop to the buyer and was still pending. See DECISIONS.md.
 - a completed checkout through the buttons, which needs the sandbox buyer's login;
 - live order tracking (the Server SDK call is written but hasn't run against a real captured order).
 
@@ -262,8 +262,14 @@ In mock mode, everything PayPal-related on screen is simulated. Nothing pretends
 ## 7. Anything remaining
 
 - [ ] **Run the sandbox lifecycle live.**
-  - *Why not done:* PayPal only allows a dispute on a payment the sandbox buyer made from their own account, and I have no buyer login.
-  - *You:* log in at sandbox.paypal.com as the sandbox buyer, pay the sandbox business account $84.00 USD, and copy the buyer-side transaction ID.
+  - *Why not done:* the transaction you sent (`3KV701938H745371C`) was refused, and the script found three reasons (details in DECISIONS.md):
+    - it's £40 paid *to* the personal account, not *to* our business account;
+    - it's still pending;
+    - `PAYPAL_SANDBOX_BUYER_EMAIL` is set to the business account.
+  - *You:*
+    1. set `PAYPAL_SANDBOX_BUYER_EMAIL` to the personal account (`sb-3j7y…@personal.example.com`) in the environment settings;
+    2. log in at sandbox.paypal.com **as that personal account** and send $84.00 USD **to** `sb-otkh…@business.example.com` (the account that owns the REST app);
+    3. copy the transaction ID from the personal account's activity page.
   - *Then:* `npx tsx scripts/sandbox-lifecycle.ts <TRANSACTION_ID>`, then commit `fixtures/paypal/lifecycle/` and update DECISIONS.md.
 - [ ] **Bind the demo story to real sandbox disputes** (optional, so the video shows LIVE badges).
   - *You:* make two buyer payments ($84.00 and $65.00 USD).

@@ -19,13 +19,17 @@ export async function paypalLive(): Promise<boolean> {
   return paypalReachable();
 }
 
-export type PayPalStatus = { mode: "live" | "mock"; detail: string };
+export type PayPalStatus = { mode: "live" | "mock"; detail: string; warning?: boolean };
 export async function paypalStatus(): Promise<PayPalStatus> {
   if (env.forceMock) return { mode: "mock", detail: "REBUTTAL_MOCK=1" };
   if (!hasPayPalKeys()) return { mode: "mock", detail: "No PayPal sandbox keys" };
-  return (await paypalReachable())
-    ? { mode: "live", detail: "PayPal sandbox" }
-    : { mode: "mock", detail: "PayPal sandbox unreachable" };
+  if (!(await paypalReachable())) return { mode: "mock", detail: "PayPal sandbox unreachable" };
+  const warning = /@business\.example\.com$/i.test(env.paypalBuyerEmail)
+    ? " · Warning: PAYPAL_SANDBOX_BUYER_EMAIL is a business account; buyer-side sandbox calls need the personal (buyer) account"
+    : !env.paypalBuyerEmail
+      ? " · No sandbox buyer email: buyer-side steps are simulated"
+      : "";
+  return { mode: "live", detail: `PayPal sandbox${warning}`, warning: !!warning };
 }
 
 type ActionSpec = {

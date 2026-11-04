@@ -113,3 +113,34 @@ describe("Rebuttal workflow", () => {
     expect(allowedActions("new", fresh())).toEqual([]);
   });
 });
+
+describe("sandbox preflight", () => {
+  it("explains why a transaction cannot be disputed (the case seen on 4 Nov 2026)", async () => {
+    const { judge } = await import("@/lib/paypal/preflight");
+    const capture = JSON.parse(
+      (await import("node:fs")).readFileSync("fixtures/paypal/recorded/3KV701938H745371C-capture-lookup.json", "utf8"),
+    );
+    const r = judge(capture, "sb-seller@business.example.com");
+    expect(r.ok).toBe(false);
+    expect(r.amount).toEqual({ currency_code: "GBP", value: "40.00" });
+    expect(r.problems.join(" ")).toMatch(/business \(seller\) account/);
+    expect(r.problems.join(" ")).toMatch(/made to a personal account/);
+    expect(r.problems.join(" ")).toMatch(/PENDING \(UNILATERAL\)/);
+  });
+
+  it("passes a completed payment to the seller from a personal buyer", async () => {
+    const { judge } = await import("@/lib/paypal/preflight");
+    const r = judge(
+      { id: "X", status: "COMPLETED", amount: { currency_code: "USD", value: "84.00" }, payee: { email_address: "sb-shop@business.example.com" } },
+      "sb-buyer@personal.example.com",
+    );
+    expect(r).toMatchObject({ ok: true, problems: [] });
+  });
+
+  it("redacts sandbox emails and merchant ids before fixtures are committed", async () => {
+    const { redact } = await import("@/lib/paypal/preflight");
+    expect(redact({ payee: { email_address: "sb-3j7yv53688109@personal.example.com", merchant_id: "Q2WPLANASGYGN" } })).toEqual({
+      payee: { email_address: "sb-3j7y…@personal.example.com", merchant_id: "Q2WP…" },
+    });
+  });
+});

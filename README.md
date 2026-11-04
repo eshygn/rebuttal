@@ -86,13 +86,13 @@ submit_recommendation ─── Recommendation (zod): action, confidence, reason
 
 1. Copy `.env.example` to `.env` and fill in:
    - `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`: a **sandbox** REST app (developer.paypal.com → Apps & Credentials). Customer disputes are on by default for sandbox apps.
-   - `PAYPAL_SANDBOX_BUYER_EMAIL`: your sandbox **personal** account. The buyer-side sandbox calls need the `disputes/create` scope on the app and the buyer's consent (see PayPal's *Set up buyer-side credentials* page).
+   - `PAYPAL_SANDBOX_BUYER_EMAIL`: your sandbox **personal** account (it ends in `@personal.example.com`). Using the business account here is the most common mistake; the PayPal chip shows ⚠ if you do. The buyer-side sandbox calls need the `disputes/create` scope on the app and the buyer's consent (see PayPal's *Set up buyer-side credentials* page).
    - `GOOGLE_GENERATIVE_AI_API_KEY`: from Google AI Studio. `AI_MODEL` is optional.
 2. `npm run dev`. The chips should read **PayPal: sandbox live** and **AI: gemini-…**.
 3. To run the story on real sandbox disputes, you need payments the sandbox buyer made from their own PayPal account (PayPal will not let a buyer dispute anyone else's payment):
-   - log in to the shop (`/shop`) or to sandbox.paypal.com as the sandbox buyer and pay **$84.00 USD** (the mug pair + shipping) for the INR story, and **$65.00 USD** (the bowl + shipping) for the SNAD story;
+   - log in to the shop (`/shop`) or to sandbox.paypal.com as the sandbox **personal** account and pay the **business account that owns the REST app** (not the other way round) **$84.00 USD** (the mug pair + shipping) for the INR story, and **$65.00 USD** (the bowl + shipping) for the SNAD story;
    - copy each **buyer-side transaction ID** from the buyer account's activity page into `SANDBOX_INR_TRANSACTION_ID` and `SANDBOX_SNAD_TRANSACTION_ID`;
-   - restart. "A buyer opens a dispute" now creates a real sandbox dispute, and every later step goes to PayPal.
+   - restart. "A buyer opens a dispute" now creates a real sandbox dispute, and every later step goes to PayPal. If PayPal refuses, the call log says why (wrong direction, payment not completed, buyer email is the seller).
 4. Optional: `npx tsx scripts/sandbox-lifecycle.ts <id>` to record a full lifecycle as fixtures, and `npx tsx scripts/record-ai.ts` to re-record the Gemini runs used as the fallback (it uses about 15 requests of free-tier quota).
 
 ### Deploy
