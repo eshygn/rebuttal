@@ -114,7 +114,11 @@ export async function addShopTracking(id: string) {
 export function listShopOrders() {
   return (
     db()
-      .prepare("SELECT id, buyer_name, amount_minor, currency, paid_at, source, tracking, paypal_order_id, capture_id FROM orders WHERE id NOT LIKE 'HIST-%' ORDER BY paid_at DESC")
-      .all() as { id: string; buyer_name: string; amount_minor: number; currency: string; paid_at: string; source: string; tracking: string | null; paypal_order_id: string; capture_id: string }[]
+      .prepare(
+        `SELECT o.id, o.buyer_name, o.amount_minor, o.currency, o.paid_at, o.source, o.tracking, o.paypal_order_id, o.capture_id,
+                EXISTS (SELECT 1 FROM disputes d WHERE d.order_id = o.id) AS disputed
+         FROM orders o WHERE o.id NOT LIKE 'HIST-%' ORDER BY o.paid_at DESC`,
+      )
+      .all() as { id: string; buyer_name: string; amount_minor: number; currency: string; paid_at: string; source: string; tracking: string | null; paypal_order_id: string; capture_id: string; disputed: number }[]
   ).map((o) => ({ ...o, tracking: o.tracking ? JSON.parse(o.tracking) : null }));
 }
