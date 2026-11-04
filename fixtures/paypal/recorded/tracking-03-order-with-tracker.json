@@ -1,0 +1,143 @@
+{
+  "id": "02K20689YK8019334",
+  "intent": "CAPTURE",
+  "status": "COMPLETED",
+  "payment_source": {
+    "card": {
+      "name": "Test Buyer",
+      "last_digits": "4658",
+      "expiry": "2030-12",
+      "brand": "VISA",
+      "available_networks": [
+        "VISA"
+      ],
+      "type": "CREDIT",
+      "bin_details": {
+        "bin": "403203",
+        "issuing_bank": "Baxter Credit Union",
+        "bin_country_code": "US"
+      }
+    }
+  },
+  "purchase_units": [
+    {
+      "reference_id": "default",
+      "amount": {
+        "currency_code": "USD",
+        "value": "84.00",
+        "breakdown": {}
+      },
+      "payee": {
+        "email_address": "sb-otkh…@business.example.com",
+        "merchant_id": "UX7A…"
+      },
+      "description": "Speckled stoneware mug, oat (pair)",
+      "invoice_id": "FC-VERIFY-1793814688285",
+      "soft_descriptor": "TEST STORE",
+      "shipping": {
+        "trackers": [
+          {
+            "id": "4LU31787GU2891545-NL4471029385US",
+            "status": "SHIPPED",
+            "items": [],
+            "links": [
+              {
+                "href": "https://api.sandbox.paypal.com/v2/checkout/orders/02K20689YK8019334",
+                "rel": "up",
+                "method": "GET"
+              },
+              {
+                "href": "https://api.sandbox.paypal.com/v2/checkout/orders/02K20689YK8019334/trackers/4LU31787GU2891545-NL4471029385US",
+                "rel": "update",
+                "method": "PATCH"
+              }
+            ],
+            "notify_payer": false
+          }
+        ]
+      },
+      "supplementary_data": {
+        "risk": {
+          "risk_level_indicator": "HIGH_RISK"
+        }
+      },
+      "payments": {
+        "captures": [
+          {
+            "id": "4LU31787GU2891545",
+            "status": "COMPLETED",
+            "amount": {
+              "currency_code": "USD",
+              "value": "84.00"
+            },
+            "final_capture": true,
+            "seller_protection": {
+              "status": "NOT_ELIGIBLE"
+            },
+            "seller_receivable_breakdown": {
+              "gross_amount": {
+                "currency_code": "USD",
+                "value": "84.00"
+              },
+              "paypal_fee": {
+                "currency_code": "USD",
+                "value": "2.98"
+              },
+              "net_amount": {
+                "currency_code": "USD",
+                "value": "81.02"
+              },
+              "receivable_amount": {
+                "currency_code": "GBP",
+                "value": "58.47"
+              },
+              "exchange_rate": {
+                "source_currency": "USD",
+                "target_currency": "GBP",
+                "value": "0.721682194528"
+              }
+            },
+            "invoice_id": "FC-VERIFY-1793814688285",
+            "links": [
+              {
+                "href": "https://api.sandbox.paypal.com/v2/payments/captures/4LU31787GU2891545",
+                "rel": "self",
+                "method": "GET"
+              },
+              {
+                "href": "https://api.sandbox.paypal.com/v2/payments/captures/4LU31787GU2891545/refund",
+                "rel": "refund",
+                "method": "POST"
+              },
+              {
+                "href": "https://api.sandbox.paypal.com/v2/checkout/orders/02K20689YK8019334",
+                "rel": "up",
+                "method": "GET"
+              }
+            ],
+            "create_time": "2026-11-04T17:51:30Z",
+            "update_time": "2026-11-04T17:51:30Z",
+            "network_transaction_reference": {
+              "id": "489474129919292",
+              "network": "VISA"
+            },
+            "processor_response": {
+              "avs_code": "Y",
+              "cvv_code": "S",
+              "response_code": "0000"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "create_time": "2026-11-04T17:51:30Z",
+  "update_time": "2026-11-04T17:51:30Z",
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v2/checkout/orders/02K20689YK8019334",
+      "rel": "self",
+      "method": "GET"
+    }
+  ]
+}

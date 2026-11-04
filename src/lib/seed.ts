@@ -5,6 +5,22 @@ import { DEMO_START, DISPUTES, EVIDENCE, HISTORY, ORDERS, SELLER, type ScenarioO
 
 const money = (minor: number, currency: string) => ({ currency_code: currency, value: toPayPalValue(minor, currency) });
 
+/** A tracker as Orders v2 returns it after POST /v2/checkout/orders/{id}/track. */
+export function trackerJson(orderId: string, captureId: string, number: string) {
+  const id = `${captureId}-${number}`;
+  const base = `https://api.sandbox.paypal.com/v2/checkout/orders/${orderId}`;
+  return {
+    id,
+    status: "SHIPPED",
+    items: [],
+    links: [
+      { href: base, rel: "up", method: "GET" },
+      { href: `${base}/trackers/${id}`, rel: "update", method: "PATCH" },
+    ],
+    notify_payer: false,
+  };
+}
+
 /** An Orders v2 "show order details" response for a captured, shipped order. */
 export function orderJson(o: ScenarioOrder) {
   const itemTotal = o.items.reduce((s, i) => s + i.qty * i.unitMinor, 0);
@@ -51,18 +67,9 @@ export function orderJson(o: ScenarioOrder) {
           },
           ...(o.tracking
             ? {
-                trackers: [
-                  {
-                    id: `${o.captureId}-${o.tracking.number}`,
-                    status: "SHIPPED",
-                    items: o.items.map((i) => ({ name: i.name, sku: i.sku, quantity: String(i.qty) })),
-                    links: [
-                      { href: `https://api-m.sandbox.paypal.com/v2/checkout/orders/${paypalOrderId}/trackers/${o.captureId}-${o.tracking.number}`, rel: "self", method: "GET" },
-                    ],
-                    create_time: o.tracking.addedAt,
-                    update_time: o.tracking.addedAt,
-                  },
-                ],
+                // Exactly the shape the sandbox returned on 4 Nov 2026
+                // (fixtures/paypal/recorded/tracking-03-order-with-tracker.json): no carrier, no scans.
+                trackers: [trackerJson(paypalOrderId, o.captureId, o.tracking.number)],
               }
             : {}),
         },
