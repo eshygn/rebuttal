@@ -1,0 +1,189 @@
+{
+  "scenario": "inr-stickers",
+  "model": "gemini-2.5-flash",
+  "recorded_at": "2026-11-04T11:46:06.474Z",
+  "trace": [
+    {
+      "id": 1,
+      "tool": "get_dispute",
+      "label": "Pulled the dispute from PayPal",
+      "input": {},
+      "status": "done",
+      "output": {
+        "dispute_id": "PP-D-21702",
+        "reason": "MERCHANDISE_OR_SERVICE_NOT_RECEIVED",
+        "reason_label": "Item not received",
+        "status": "WAITING_FOR_SELLER_RESPONSE",
+        "stage": "INQUIRY",
+        "amount": "$14.00 USD",
+        "opened_at": "2026-11-04T16:30:00.000Z",
+        "seller_response_due": "2026-11-14T16:30:00.000Z",
+        "buyer_claim": "Ordered stickers three weeks ago, nothing has arrived.",
+        "evidence_requested": [
+          "PROOF_OF_FULFILLMENT"
+        ],
+        "available_actions": [
+          "provide_evidence",
+          "make_offer",
+          "accept_claim",
+          "escalate",
+          "send_message"
+        ]
+      },
+      "ms": 1
+    },
+    {
+      "id": 2,
+      "tool": "get_transaction",
+      "label": "Pulled the original payment",
+      "input": {},
+      "status": "done",
+      "output": {
+        "order": "FC-1029",
+        "paid_at": "2026-10-19T20:11:52.000Z",
+        "amount": "$14.00 USD",
+        "buyer": "Sam Whitfield",
+        "items": [
+          "1 × Glaze-test sticker sheet set"
+        ],
+        "ship_to": "9 Orchard Lane, Burlington, VT 05401",
+        "seller_protection": "ELIGIBLE"
+      },
+      "ms": 1
+    },
+    {
+      "id": 3,
+      "tool": "get_tracking_record",
+      "label": "Read the PayPal tracking record",
+      "input": {},
+      "status": "done",
+      "output": {
+        "tracker": null,
+        "note": "No tracking was added to this PayPal transaction."
+      },
+      "ms": 0
+    },
+    {
+      "id": 4,
+      "tool": "list_seller_evidence",
+      "label": "Gathered the seller’s evidence",
+      "input": {},
+      "status": "done",
+      "output": [
+        {
+          "id": "ev-stickers-listing",
+          "kind": "listing",
+          "title": "Listing: Glaze-test sticker sheet set",
+          "has_file": false,
+          "text": "Three sticker sheets of our glaze test tiles. Ships as a flat letter (untracked) to keep postage low."
+        }
+      ],
+      "ms": 0
+    },
+    {
+      "id": 5,
+      "tool": "check_evidence_coverage",
+      "label": "Checked the rules table",
+      "input": {},
+      "status": "done",
+      "output": {
+        "strength": "weak",
+        "score": 0,
+        "baseline_action": "accept",
+        "items": [
+          {
+            "id": "tracking_on_paypal",
+            "label": "Tracking number on the PayPal order",
+            "weight": "critical",
+            "state": "missing",
+            "detail": "No tracker was added to this PayPal transaction."
+          },
+          {
+            "id": "carrier_delivered",
+            "label": "Carrier confirms delivery",
+            "weight": "critical",
+            "state": "missing",
+            "detail": "No carrier screenshot or PDF on file."
+          },
+          {
+            "id": "address_matches",
+            "label": "Delivered to the PayPal shipping address",
+            "weight": "critical",
+            "state": "missing",
+            "detail": "No delivery address on the carrier scan."
+          },
+          {
+            "id": "tracking_matches",
+            "label": "Scan matches the PayPal tracking number",
+            "weight": "strong",
+            "state": "missing",
+            "detail": "Nothing to compare yet."
+          },
+          {
+            "id": "delivered_before_claim",
+            "label": "Delivered before the claim was opened",
+            "weight": "strong",
+            "state": "missing",
+            "detail": "No delivery date to compare."
+          },
+          {
+            "id": "buyer_communication",
+            "label": "Messages with the buyer",
+            "weight": "supporting",
+            "state": "missing",
+            "detail": "No messages on file"
+          }
+        ]
+      },
+      "ms": 1
+    },
+    {
+      "id": 6,
+      "tool": "submit_recommendation",
+      "label": "Recommended an action",
+      "input": {
+        "action": "accept",
+        "confidence": 90,
+        "headline": "Accept the claim and refund in full due to lack of tracking evidence.",
+        "reasoning": [
+          "The buyer claims \"Item not received\" for the Glaze-test sticker sheet set ordered on 19 Oct 2026 for $14.00 USD.",
+          "The product listing stated that the item ships as a flat letter via untracked mail.",
+          "PayPal requires proof of delivery for \"Item not received\" disputes, which is missing as there is no tracking information available.",
+          "Without proof of delivery, fighting this dispute would almost certainly result in a loss for the seller, leading to a forced refund. Accepting now minimizes further risk and processing time."
+        ],
+        "offer_percent": null,
+        "response_to_paypal": "We understand the buyer's claim regarding the non-receipt of their order for Glaze-test sticker sheet set (FC-1029). As stated in our product listing, this item ships as a flat letter via untracked mail to keep postage costs low for our customers. Unfortunately, without tracking, we cannot prove delivery. We will accept this claim and issue a full refund.",
+        "evidence_to_attach": [],
+        "risks": [
+          "Potential negative feedback from the buyer, although refunding promptly may mitigate this."
+        ]
+      },
+      "status": "done",
+      "output": {
+        "accepted": true
+      },
+      "ms": 0
+    }
+  ],
+  "ai_facts": {
+    "carrierScan": null,
+    "photoComparison": null
+  },
+  "recommendation": {
+    "action": "accept",
+    "confidence": 90,
+    "headline": "Accept the claim and refund in full due to lack of tracking evidence.",
+    "reasoning": [
+      "The buyer claims \"Item not received\" for the Glaze-test sticker sheet set ordered on 19 Oct 2026 for $14.00 USD.",
+      "The product listing stated that the item ships as a flat letter via untracked mail.",
+      "PayPal requires proof of delivery for \"Item not received\" disputes, which is missing as there is no tracking information available.",
+      "Without proof of delivery, fighting this dispute would almost certainly result in a loss for the seller, leading to a forced refund. Accepting now minimizes further risk and processing time."
+    ],
+    "offer_percent": null,
+    "response_to_paypal": "We understand the buyer's claim regarding the non-receipt of their order for Glaze-test sticker sheet set (FC-1029). As stated in our product listing, this item ships as a flat letter via untracked mail to keep postage costs low for our customers. Unfortunately, without tracking, we cannot prove delivery. We will accept this claim and issue a full refund.",
+    "evidence_to_attach": [],
+    "risks": [
+      "Potential negative feedback from the buyer, although refunding promptly may mitigate this."
+    ]
+  }
+}

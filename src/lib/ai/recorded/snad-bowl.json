@@ -1,0 +1,247 @@
+{
+  "scenario": "snad-bowl",
+  "model": "gemini-2.5-flash",
+  "recorded_at": "2026-11-04T11:48:27.790Z",
+  "trace": [
+    {
+      "id": 1,
+      "tool": "get_dispute",
+      "label": "Pulled the dispute from PayPal",
+      "input": {},
+      "status": "done",
+      "output": {
+        "dispute_id": "PP-D-21864",
+        "reason": "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+        "reason_label": "Not as described",
+        "status": "WAITING_FOR_SELLER_RESPONSE",
+        "stage": "INQUIRY",
+        "amount": "$65.00 USD",
+        "opened_at": "2026-11-07T18:00:00.000Z",
+        "seller_response_due": "2026-11-17T18:00:00.000Z",
+        "buyer_claim": "The bowl is a pale, washed-out blue, nothing like the deep cobalt in the listing photos. I bought it to match a set. Not what I paid for.",
+        "evidence_requested": [
+          "ITEM_DESCRIPTION"
+        ],
+        "available_actions": [
+          "provide_evidence",
+          "make_offer",
+          "accept_claim",
+          "escalate",
+          "send_message"
+        ]
+      },
+      "ms": 6
+    },
+    {
+      "id": 2,
+      "tool": "get_transaction",
+      "label": "Pulled the original payment",
+      "input": {},
+      "status": "done",
+      "output": {
+        "order": "FC-1037",
+        "paid_at": "2026-10-29T17:48:10.000Z",
+        "amount": "$65.00 USD",
+        "buyer": "Priya Natarajan",
+        "items": [
+          "1 × Cobalt Tide serving bowl, large"
+        ],
+        "ship_to": "42 Larkspur Court, Ann Arbor, MI 48104",
+        "seller_protection": "ELIGIBLE"
+      },
+      "ms": 3
+    },
+    {
+      "id": 3,
+      "tool": "get_tracking_record",
+      "label": "Read the PayPal tracking record",
+      "input": {},
+      "status": "done",
+      "output": {
+        "tracker": {
+          "carrier": "Northline Post",
+          "number": "NL4471029112US",
+          "status": "SHIPPED"
+        },
+        "added_at": "2026-10-30T21:40:00.000Z",
+        "note": "PayPal's tracker only holds the carrier and number the seller entered and the status the seller set. It has no carrier scans or delivery confirmation."
+      },
+      "ms": 1
+    },
+    {
+      "id": 4,
+      "tool": "list_seller_evidence",
+      "label": "Gathered the seller’s evidence",
+      "input": {},
+      "status": "done",
+      "output": [
+        {
+          "id": "ev-bowl-buyer-photo",
+          "kind": "buyer_photo",
+          "title": "Photo the buyer sent",
+          "has_file": true
+        },
+        {
+          "id": "ev-bowl-listing",
+          "kind": "listing",
+          "title": "Listing: Cobalt Tide serving bowl, large",
+          "has_file": false,
+          "text": "Cobalt Tide serving bowl, large. A deep cobalt glaze that breaks to midnight at the rim. 11 in across. Each piece is glazed by hand and colour varies between kiln firings, so yours will be unique. Returns accepted within 30 days."
+        },
+        {
+          "id": "ev-bowl-listing-photo",
+          "kind": "listing_photo",
+          "title": "Listing photo (studio)",
+          "has_file": true
+        },
+        {
+          "id": "ev-bowl-msg",
+          "kind": "buyer_message",
+          "title": "Buyer messages",
+          "has_file": false,
+          "text": "4 Nov 2026, Priya Natarajan: The bowl arrived but it's a pale blue, not the deep cobalt in your photos. Photo attached.\n4 Nov 2026, Fernhill Ceramics: Sorry to hear that! Glaze colour does vary a little between firings. Could you send a photo in daylight?\n10 Nov 2026, Priya Natarajan: I've opened a case with PayPal."
+        }
+      ],
+      "ms": 0
+    },
+    {
+      "id": 5,
+      "tool": "compare_photos",
+      "label": "Compared the buyer’s photo with the listing",
+      "input": {
+        "listing_photo_id": "ev-bowl-listing-photo",
+        "buyer_photo_id": "ev-bowl-buyer-photo"
+      },
+      "status": "done",
+      "output": {
+        "comparable": true,
+        "materially_different": true,
+        "differences": [
+          "colour"
+        ],
+        "lighting_could_explain": false,
+        "summary": "The received item's colour is a significantly lighter blue than the deep cobalt blue in the listing photo."
+      },
+      "ms": 3237
+    },
+    {
+      "id": 6,
+      "tool": "check_evidence_coverage",
+      "label": "Checked the rules table",
+      "input": {},
+      "status": "done",
+      "output": {
+        "strength": "partial",
+        "score": 42,
+        "baseline_action": "offer",
+        "items": [
+          {
+            "id": "listing_description",
+            "label": "Listing text as the buyer saw it",
+            "weight": "critical",
+            "state": "present",
+            "detail": "Listing text on file, as the buyer saw it"
+          },
+          {
+            "id": "pre_shipment_photo",
+            "label": "Photo of this exact item before shipping",
+            "weight": "critical",
+            "state": "missing",
+            "detail": "No photo of this unit before it shipped"
+          },
+          {
+            "id": "buyer_photo_comparison",
+            "label": "Buyer’s photo vs listing photo",
+            "weight": "strong",
+            "state": "against",
+            "detail": "The received item's colour is a significantly lighter blue than the deep cobalt blue in the listing photo."
+          },
+          {
+            "id": "variation_disclosed",
+            "label": "Listing discloses natural variation",
+            "weight": "strong",
+            "state": "present",
+            "detail": "“Colour varies between kiln firings” is in the listing"
+          },
+          {
+            "id": "return_policy",
+            "label": "Published return policy",
+            "weight": "supporting",
+            "state": "present",
+            "detail": "Returns accepted within 30 days"
+          },
+          {
+            "id": "buyer_communication",
+            "label": "Messages with the buyer",
+            "weight": "supporting",
+            "state": "present",
+            "detail": "Message thread on file"
+          }
+        ]
+      },
+      "ms": 1
+    },
+    {
+      "id": 7,
+      "tool": "submit_recommendation",
+      "label": "Recommended an action",
+      "input": {
+        "action": "offer",
+        "confidence": 85,
+        "headline": "Propose a partial refund due to color variation",
+        "reasoning": [
+          "The buyer's photo shows the item is a significantly lighter blue than the listing photo, confirmed by comparison.",
+          "The listing disclosed 'colour varies between kiln firings,' but the difference is material.",
+          "A partial refund avoids a return shipment and lets the buyer keep the item, which buyers often prefer.",
+          "No pre-shipment photo of the specific unit to counter the buyer's claim."
+        ],
+        "offer_percent": 40,
+        "response_to_paypal": "Dear Priya, we're sorry the bowl's colour wasn't exactly what you expected. As noted in our listing, the glaze colour can vary between kiln firings, making each piece unique. However, we understand your disappointment that the colour is significantly lighter than the listing photo. To resolve this, we'd like to offer you a partial refund of 40% of the purchase price. This would allow you to keep the bowl, and you wouldn't need to go through the hassle of returning it. We hope this is a satisfactory resolution.",
+        "evidence_to_attach": [
+          "ev-bowl-listing",
+          "ev-bowl-buyer-photo",
+          "ev-bowl-listing-photo",
+          "ev-bowl-msg"
+        ],
+        "risks": [
+          "Buyer might refuse the offer and escalate the dispute, potentially leading to a full refund."
+        ]
+      },
+      "status": "done",
+      "output": {
+        "accepted": true
+      },
+      "ms": 0
+    }
+  ],
+  "ai_facts": {
+    "carrierScan": null,
+    "photoComparison": {
+      "comparable": true,
+      "materiallyDifferent": true,
+      "summary": "The received item's colour is a significantly lighter blue than the deep cobalt blue in the listing photo."
+    }
+  },
+  "recommendation": {
+    "action": "offer",
+    "confidence": 85,
+    "headline": "Propose a partial refund due to color variation",
+    "reasoning": [
+      "The buyer's photo shows the item is a significantly lighter blue than the listing photo, confirmed by comparison.",
+      "The listing disclosed 'colour varies between kiln firings,' but the difference is material.",
+      "A partial refund avoids a return shipment and lets the buyer keep the item, which buyers often prefer.",
+      "No pre-shipment photo of the specific unit to counter the buyer's claim."
+    ],
+    "offer_percent": 40,
+    "response_to_paypal": "Dear Priya, we're sorry the bowl's colour wasn't exactly what you expected. As noted in our listing, the glaze colour can vary between kiln firings, making each piece unique. However, we understand your disappointment that the colour is significantly lighter than the listing photo. To resolve this, we'd like to offer you a partial refund of 40% of the purchase price. This would allow you to keep the bowl, and you wouldn't need to go through the hassle of returning it. We hope this is a satisfactory resolution.",
+    "evidence_to_attach": [
+      "ev-bowl-listing",
+      "ev-bowl-buyer-photo",
+      "ev-bowl-listing-photo",
+      "ev-bowl-msg"
+    ],
+    "risks": [
+      "Buyer might refuse the offer and escalate the dispute, potentially leading to a full refund."
+    ]
+  }
+}

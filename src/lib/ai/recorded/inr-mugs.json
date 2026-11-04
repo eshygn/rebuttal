@@ -1,0 +1,277 @@
+{
+  "scenario": "inr-mugs",
+  "model": "gemini-3.5-flash",
+  "recorded_at": "2026-11-04T11:42:50.966Z",
+  "trace": [
+    {
+      "id": 1,
+      "tool": "get_dispute",
+      "label": "Pulled the dispute from PayPal",
+      "input": {},
+      "status": "done",
+      "output": {
+        "dispute_id": "PP-D-21837",
+        "reason": "MERCHANDISE_OR_SERVICE_NOT_RECEIVED",
+        "reason_label": "Item not received",
+        "status": "WAITING_FOR_SELLER_RESPONSE",
+        "stage": "INQUIRY",
+        "amount": "$84.00 USD",
+        "opened_at": "2026-11-07T18:00:00.000Z",
+        "seller_response_due": "2026-11-17T18:00:00.000Z",
+        "buyer_claim": "I never got my mugs. Tracking hasn't updated and nobody has replied to me.",
+        "evidence_requested": [
+          "PROOF_OF_FULFILLMENT"
+        ],
+        "available_actions": [
+          "provide_evidence",
+          "make_offer",
+          "accept_claim",
+          "escalate",
+          "send_message"
+        ]
+      },
+      "ms": 3
+    },
+    {
+      "id": 2,
+      "tool": "get_transaction",
+      "label": "Pulled the original payment",
+      "input": {},
+      "status": "done",
+      "output": {
+        "order": "FC-1041",
+        "paid_at": "2026-11-02T23:22:41.000Z",
+        "amount": "$84.00 USD",
+        "buyer": "Jordan Reyes",
+        "items": [
+          "1 × Speckled stoneware mug, oat (pair)"
+        ],
+        "ship_to": "1180 Alder Street, Apt 3, Portland, OR 97214",
+        "seller_protection": "ELIGIBLE"
+      },
+      "ms": 1
+    },
+    {
+      "id": 3,
+      "tool": "get_tracking_record",
+      "label": "Read the PayPal tracking record",
+      "input": {},
+      "status": "done",
+      "output": {
+        "tracker": {
+          "carrier": "Northline Post",
+          "number": "NL4471029385US",
+          "status": "SHIPPED"
+        },
+        "added_at": "2026-11-03T19:05:00.000Z",
+        "note": "PayPal's tracker only holds the carrier and number the seller entered and the status the seller set. It has no carrier scans or delivery confirmation."
+      },
+      "ms": 1
+    },
+    {
+      "id": 4,
+      "tool": "list_seller_evidence",
+      "label": "Gathered the seller’s evidence",
+      "input": {},
+      "status": "done",
+      "output": [
+        {
+          "id": "ev-mugs-carrier",
+          "kind": "carrier_document",
+          "title": "Northline Post tracking page (screenshot)",
+          "has_file": true
+        },
+        {
+          "id": "ev-mugs-listing",
+          "kind": "listing",
+          "title": "Listing: Speckled stoneware mug, oat (pair)",
+          "has_file": false,
+          "text": "Speckled stoneware mug, oat — sold as a pair. Wheel-thrown in our Asheville studio, 12 oz, dishwasher safe. Ships in 1–2 business days with Northline Post tracked delivery."
+        },
+        {
+          "id": "ev-mugs-msg",
+          "kind": "buyer_message",
+          "title": "Buyer messages",
+          "has_file": false,
+          "text": "3 Nov 2026, Fernhill Ceramics: Your mugs are on their way! Tracking: NL4471029385US (Northline Post).\n7 Nov 2026, Jordan Reyes: I never got my mugs. Tracking hasn't updated and nobody has replied to me."
+        }
+      ],
+      "ms": 1
+    },
+    {
+      "id": 5,
+      "tool": "read_carrier_document",
+      "label": "Read the carrier document",
+      "input": {
+        "document_id": "ev-mugs-carrier"
+      },
+      "status": "done",
+      "output": {
+        "carrier_name": "Northline Post",
+        "tracking_number": "NL4471029385US",
+        "status": "DELIVERED",
+        "delivered_at": "2026-11-05T14:12:00-08:00",
+        "delivery_address": "J. REYES, 1180 ALDER ST APT 3, PORTLAND, OR 97214",
+        "delivery_note": "Left at front door",
+        "scan_events": [
+          {
+            "at": "2026-11-05T14:12:00-08:00",
+            "description": "Delivered, left at front door",
+            "location": "PORTLAND, OR 97214"
+          },
+          {
+            "at": "2026-11-05T08:47:00-08:00",
+            "description": "Out for delivery",
+            "location": "PORTLAND, OR"
+          },
+          {
+            "at": "2026-11-04T21:31:00-08:00",
+            "description": "Arrived at regional facility",
+            "location": "PORTLAND, OR"
+          },
+          {
+            "at": "2026-11-03T18:20:00-08:00",
+            "description": "Accepted at origin",
+            "location": "ASHEVILLE, NC"
+          },
+          {
+            "at": "2026-11-03T11:05:00-08:00",
+            "description": "Shipping label created",
+            "location": "ASHEVILLE, NC"
+          }
+        ],
+        "legibility": "clear",
+        "deliveredAt": "2026-11-05T14:12:00-08:00",
+        "trackingNumber": "NL4471029385US",
+        "address": "J. REYES, 1180 ALDER ST APT 3, PORTLAND, OR 97214",
+        "deliveryNote": "Left at front door",
+        "address_matches_paypal_ship_to": true,
+        "tracking_matches_paypal": true,
+        "days_delivered_before_claim": 2
+      },
+      "ms": 10190
+    },
+    {
+      "id": 6,
+      "tool": "check_evidence_coverage",
+      "label": "Checked the rules table",
+      "input": {},
+      "status": "done",
+      "output": {
+        "strength": "strong",
+        "score": 100,
+        "baseline_action": "fight",
+        "items": [
+          {
+            "id": "tracking_on_paypal",
+            "label": "Tracking number on the PayPal order",
+            "weight": "critical",
+            "state": "present",
+            "detail": "Northline Post NL4471029385US (status entered by seller: SHIPPED)"
+          },
+          {
+            "id": "carrier_delivered",
+            "label": "Carrier confirms delivery",
+            "weight": "critical",
+            "state": "present",
+            "detail": "Delivered Nov 5, read from the carrier scan"
+          },
+          {
+            "id": "address_matches",
+            "label": "Delivered to the PayPal shipping address",
+            "weight": "critical",
+            "state": "present",
+            "detail": "J. REYES, 1180 ALDER ST APT 3, PORTLAND, OR 97214"
+          },
+          {
+            "id": "tracking_matches",
+            "label": "Scan matches the PayPal tracking number",
+            "weight": "strong",
+            "state": "present",
+            "detail": "NL4471029385US on both"
+          },
+          {
+            "id": "delivered_before_claim",
+            "label": "Delivered before the claim was opened",
+            "weight": "strong",
+            "state": "present",
+            "detail": "Delivered 2 days before the claim"
+          },
+          {
+            "id": "buyer_communication",
+            "label": "Messages with the buyer",
+            "weight": "supporting",
+            "state": "present",
+            "detail": "Message thread on file"
+          }
+        ]
+      },
+      "ms": 2
+    },
+    {
+      "id": 7,
+      "tool": "submit_recommendation",
+      "label": "Recommended an action",
+      "input": {
+        "action": "fight",
+        "confidence": 95,
+        "headline": "Fight the claim: carrier tracking confirms package was delivered to the buyer's address on 5 Nov 2026.",
+        "reasoning": [
+          "Order FC-1041 ($84.00 USD) paid on 2 Nov 2026 was shipped via Northline Post tracking NL4471029385US.",
+          "Northline Post tracking confirms delivery on 5 Nov 2026 at 2:12 pm to 1180 Alder Street, Apt 3, Portland, OR 97214.",
+          "The delivery address matches the buyer's PayPal address exactly, qualifying the transaction for PayPal Seller Protection.",
+          "The package was successfully delivered 2 days prior to the buyer opening this dispute on 7 Nov 2026."
+        ],
+        "offer_percent": null,
+        "response_to_paypal": "Dear PayPal Reviewer,\n\nWe are submitting evidence to contest dispute PP-D-21837 for order FC-1041 ($84.00 USD).\n\nThe item (Speckled stoneware mug, oat pair) was purchased on 2 Nov 2026 and dispatched via Northline Post under tracking number NL4471029385US, which was uploaded to PayPal on 3 Nov 2026.\n\nAccording to Northline Post tracking records, the parcel was successfully delivered on 5 Nov 2026 at 2:12 pm and left at the front door at 1180 Alder Street, Apt 3, Portland, OR 97214. This delivery address matches the buyer's confirmed PayPal shipping address exactly.\n\nBecause official proof of delivery to the buyer's designated shipping address was established prior to the dispute opened on 7 Nov 2026, this order meets all requirements for PayPal Seller Protection. We respectfully request that PayPal close this dispute in the seller's favor.\n\nThank you,\nFernhill Ceramics",
+        "evidence_to_attach": [
+          "ev-mugs-carrier",
+          "ev-mugs-msg"
+        ],
+        "risks": [
+          "The buyer may claim package theft after delivery (porch piracy), which carrier delivery proof does not prevent.",
+          "The buyer could attempt a credit card chargeback if PayPal resolves the dispute in favor of the seller."
+        ]
+      },
+      "status": "done",
+      "output": {
+        "accepted": true
+      },
+      "ms": 0
+    }
+  ],
+  "ai_facts": {
+    "carrierScan": {
+      "status": "DELIVERED",
+      "deliveredAt": "2026-11-05T14:12:00-08:00",
+      "trackingNumber": "NL4471029385US",
+      "address": "J. REYES, 1180 ALDER ST APT 3, PORTLAND, OR 97214",
+      "deliveryNote": "Left at front door",
+      "address_matches_paypal_ship_to": true,
+      "tracking_matches_paypal": true,
+      "days_delivered_before_claim": 2
+    },
+    "photoComparison": null
+  },
+  "recommendation": {
+    "action": "fight",
+    "confidence": 95,
+    "headline": "Fight the claim: carrier tracking confirms package was delivered to the buyer's address on 5 Nov 2026.",
+    "reasoning": [
+      "Order FC-1041 ($84.00 USD) paid on 2 Nov 2026 was shipped via Northline Post tracking NL4471029385US.",
+      "Northline Post tracking confirms delivery on 5 Nov 2026 at 2:12 pm to 1180 Alder Street, Apt 3, Portland, OR 97214.",
+      "The delivery address matches the buyer's PayPal address exactly, qualifying the transaction for PayPal Seller Protection.",
+      "The package was successfully delivered 2 days prior to the buyer opening this dispute on 7 Nov 2026."
+    ],
+    "offer_percent": null,
+    "response_to_paypal": "Dear PayPal Reviewer,\n\nWe are submitting evidence to contest dispute PP-D-21837 for order FC-1041 ($84.00 USD).\n\nThe item (Speckled stoneware mug, oat pair) was purchased on 2 Nov 2026 and dispatched via Northline Post under tracking number NL4471029385US, which was uploaded to PayPal on 3 Nov 2026.\n\nAccording to Northline Post tracking records, the parcel was successfully delivered on 5 Nov 2026 at 2:12 pm and left at the front door at 1180 Alder Street, Apt 3, Portland, OR 97214. This delivery address matches the buyer's confirmed PayPal shipping address exactly.\n\nBecause official proof of delivery to the buyer's designated shipping address was established prior to the dispute opened on 7 Nov 2026, this order meets all requirements for PayPal Seller Protection. We respectfully request that PayPal close this dispute in the seller's favor.\n\nThank you,\nFernhill Ceramics",
+    "evidence_to_attach": [
+      "ev-mugs-carrier",
+      "ev-mugs-msg"
+    ],
+    "risks": [
+      "The buyer may claim package theft after delivery (porch piracy), which carrier delivery proof does not prevent.",
+      "The buyer could attempt a credit card chargeback if PayPal resolves the dispute in favor of the seller."
+    ]
+  }
+}
