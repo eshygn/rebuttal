@@ -1,0 +1,41 @@
+{
+  "transaction_id": "9GS80322F8442283L",
+  "steps": [
+    {
+      "file": "01-create-dispute.json",
+      "status": 201,
+      "source": "documented-sample",
+      "note": "Shaped from developer.paypal.com/api/customer-disputes/v1 schema; replaced by a real sandbox response when the script runs live."
+    },
+    {
+      "file": "02-show-dispute.json",
+      "status": 200,
+      "source": "documented-sample",
+      "note": "Shaped from developer.paypal.com/api/customer-disputes/v1 schema; replaced by a real sandbox response when the script runs live."
+    },
+    {
+      "file": "03-provide-evidence.json",
+      "status": 200,
+      "source": "documented-sample",
+      "note": "Shaped from developer.paypal.com/api/customer-disputes/v1 schema; replaced by a real sandbox response when the script runs live."
+    },
+    {
+      "file": "04-show-after-evidence.json",
+      "status": 200,
+      "source": "documented-sample",
+      "note": "Shaped from developer.paypal.com/api/customer-disputes/v1 schema; replaced by a real sandbox response when the script runs live."
+    },
+    {
+      "file": "05-adjudicate.json",
+      "status": 200,
+      "source": "documented-sample",
+      "note": "Shaped from developer.paypal.com/api/customer-disputes/v1 schema; replaced by a real sandbox response when the script runs live."
+    },
+    {
+      "file": "06-show-resolved.json",
+      "status": 200,
+      "source": "documented-sample",
+      "note": "Shaped from developer.paypal.com/api/customer-disputes/v1 schema; replaced by a real sandbox response when the script runs live."
+    }
+  ]
+}

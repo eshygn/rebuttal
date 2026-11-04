@@ -1,0 +1,81 @@
+{
+  "dispute_id": "PP-D-21837",
+  "create_time": "2026-11-04T12:00:00.000Z",
+  "update_time": "2026-11-04T12:01:12.000Z",
+  "disputed_transactions": [
+    {
+      "buyer_transaction_id": "9GS80322F8442283L",
+      "seller_transaction_id": "5KX28116AH431373W",
+      "create_time": "2026-10-27T15:22:41.000Z",
+      "transaction_status": "COMPLETED",
+      "gross_amount": {
+        "currency_code": "USD",
+        "value": "84.00"
+      },
+      "buyer": {
+        "name": "Jordan Reyes"
+      },
+      "seller": {
+        "email": "studio@fernhill-ceramics.example",
+        "merchant_id": "8LQSDK2YN7Q6E",
+        "name": "Fernhill Ceramics"
+      },
+      "seller_protection_eligible": true
+    }
+  ],
+  "reason": "MERCHANDISE_OR_SERVICE_NOT_RECEIVED",
+  "status": "UNDER_REVIEW",
+  "dispute_amount": {
+    "currency_code": "USD",
+    "value": "84.00"
+  },
+  "dispute_life_cycle_stage": "INQUIRY",
+  "dispute_channel": "INTERNAL",
+  "seller_response_due_date": "2026-11-14T12:00:00.000Z",
+  "extensions": {
+    "merchant_contacted": true,
+    "merchant_contacted_outcome": "NO_RESPONSE",
+    "merchandize_dispute_properties": {
+      "issue_type": "PRODUCT"
+    }
+  },
+  "links": [
+    {
+      "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-D-21837",
+      "rel": "self",
+      "method": "GET"
+    },
+    {
+      "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-D-21837/adjudicate",
+      "rel": "adjudicate",
+      "method": "POST"
+    },
+    {
+      "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-D-21837/require-evidence",
+      "rel": "require_evidence",
+      "method": "POST"
+    }
+  ],
+  "evidences": [
+    {
+      "evidence_type": "PROOF_OF_FULFILLMENT",
+      "evidence_info": {
+        "tracking_info": [
+          {
+            "carrier_name": "OTHER",
+            "carrier_name_other": "Northline Post",
+            "tracking_number": "NL4471029385US"
+          }
+        ]
+      },
+      "documents": [
+        {
+          "name": "carrier-tracking-NL4471029385US.png"
+        }
+      ],
+      "notes": "Delivered 28 Oct 2026 14:12 to the address on the PayPal transaction (front porch, photo on file). Claim opened 30 Oct 2026, two days after delivery.",
+      "source": "SUBMITTED_BY_SELLER",
+      "date": "2026-11-04T12:01:10.000Z"
+    }
+  ]
+}
