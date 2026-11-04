@@ -12,7 +12,8 @@ import { generateText, hasToolCall, stepCountIs, tool } from "ai";
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { baseFacts, formatAddress, loadCase, type CaseFile } from "../casefile";
+import { baseFacts, evidenceBytes, formatAddress, loadCase, type CaseFile } from "../casefile";
+import crypto from "node:crypto";
 import { recordCall, withDispute } from "../calls";
 import { now } from "../clock";
 import { db } from "../db";
@@ -23,7 +24,7 @@ import { paypalLive, readDispute } from "../paypal/gateway";
 import { addressMatches, baselineAction, coverage, daysBetween, REASON_LABEL, type Action, type Coverage, type Facts } from "../rules";
 import { DEMO_TZ } from "../scenario";
 import { transition } from "../workflow";
-import { aiLive, chainModel, RateLimitedError, type ModelHandle } from "./model";
+import { aiLive, cacheGet, cacheKey, cacheSet, chainModel, RateLimitedError, type ModelHandle } from "./model";
 import { RecommendationSchema, tidyRecommendation, type CarrierScan, type PhotoComparison, type Recommendation } from "./schemas";
 import { comparePhotos, readCarrierDocument } from "./vision";
 
@@ -46,7 +47,7 @@ export type AnalysisResult = {
   facts: Facts;
 };
 
-export type AIMode = "live" | "recorded" | "rules";
+export type AIMode = "live" | "cached" | "recorded" | "rules";
 
 export type Recording = {
   scenario: string;
@@ -363,6 +364,16 @@ export function finalise(c: CaseFile, rec: Recommendation, facts: Facts): Analys
 
 export type RunOptions = { pace?: number; forceMode?: AIMode };
 
+/** Everything a Gemini run depends on. Same inputs → same cached run, so demo resets cost no quota. */
+function analysisKey(c: CaseFile): string {
+  const ev = c.evidence.map((e) => {
+    const b = evidenceBytes(e);
+    return [e.id, e.kind, e.text ?? "", b ? crypto.createHash("sha256").update(b).digest("hex") : ""];
+  });
+  const d = c.dispute;
+  return cacheKey("analysis-v2", SYSTEM, d.reason, d.dispute_amount, d.create_time, c.row.buyer_claim, c.orderJson.purchase_units?.[0]?.shipping, c.tracking, ev);
+}
+
 export async function analyse(disputeId: string, opts: RunOptions = {}): Promise<void> {
   if (running.has(disputeId)) return;
   const c = loadCase(disputeId);
@@ -377,19 +388,35 @@ export async function analyse(disputeId: string, opts: RunOptions = {}): Promise
     .run(disputeId, aiLive() ? "live" : "recorded", new Date().toISOString());
 
   const facts = baseFacts(c);
-  const recording = loadRecording(c.row.scenario);
-  let mode: AIMode = opts.forceMode ?? (aiLive() ? "live" : recording ? "recorded" : "rules");
+  // A recording only stands in for a live run when the evidence is exactly what was recorded.
+  const recording = c.evidence.some((e) => e.id.startsWith("up-")) ? null : loadRecording(c.row.scenario);
+  const key = analysisKey(c);
+  const cached = opts.forceMode === "live" ? undefined : cacheGet<Recording>(key);
+  let mode: AIMode = opts.forceMode ?? (aiLive() ? (cached ? "cached" : "live") : recording ? "recorded" : "rules");
   let note: string | null = null;
   let model: string | null = null;
   let tr = new Tracer(disputeId);
 
   await withDispute(disputeId, async () => {
     let rec: Recommendation | null = null;
+    if (mode === "cached" && cached) {
+      rec = await runRecorded(c, cached, tr, facts, opts.pace ?? 0.7);
+      model = cached.model;
+      note = `Same evidence as a Gemini run at ${cached.recorded_at.slice(0, 16).replace("T", " ")} UTC: reused it to save free-tier quota`;
+    }
     if (mode === "live") {
       const h = chainModel();
       try {
         rec = await runLive(c, h, tr, facts);
         model = h.served();
+        cacheSet(key, {
+          scenario: c.row.scenario ?? c.row.id,
+          model,
+          recorded_at: new Date().toISOString(),
+          trace: tr.steps,
+          ai_facts: { carrierScan: facts.carrierScan ?? null, photoComparison: facts.photoComparison ?? null },
+          recommendation: rec,
+        } satisfies Recording);
       } catch (e) {
         note =
           e instanceof RateLimitedError

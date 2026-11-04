@@ -56,9 +56,15 @@ export type ModelHandle = { model: LanguageModelV4; served: () => string };
  * down for the rest of the run) when one answers 5xx "overloaded". Every request
  * takes a rate-limit slot first.
  */
+/** Models that answered 429 recently. The free-tier quota is daily, so skip them for an hour. */
+const exhausted = new Map<string, number>();
+const EXHAUSTED_MS = 60 * 60_000;
+const available = (id: string) => (exhausted.get(id) ?? 0) < Date.now();
+
 export function chainModel(): ModelHandle {
   const google = createGoogleGenerativeAI({ apiKey: env.googleKey });
-  const ids = aiModelChain();
+  const all = aiModelChain();
+  const ids = all.filter(available).length ? all.filter(available) : all;
   const models = ids.map((id) => google(id) as unknown as LanguageModelV4);
   let idx = 0;
   const model: LanguageModelV4 = {
@@ -75,6 +81,7 @@ export function chainModel(): ModelHandle {
           return await models[idx].doGenerate(options);
         } catch (e) {
           // Free-tier quotas are per model, so a 429 on one model is a reason to try the next.
+          if (isRateLimit(e)) exhausted.set(ids[idx], Date.now() + EXHAUSTED_MS);
           if ((isOverloaded(e) || isRateLimit(e)) && idx < models.length - 1) {
             idx++;
             continue;
