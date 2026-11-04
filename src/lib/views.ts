@@ -76,7 +76,7 @@ export async function stateView() {
     status: {
       paypal: pp,
       ai: hasAIKey()
-        ? { mode: "live" as const, detail: `Gemini · ${aiModelChain()[0]}` }
+        ? { mode: "live" as const, detail: `Gemini free tier · tries ${aiModelChain().join(" → ")}` }
         : { mode: "recorded" as const, detail: "No Gemini key: recorded analyses" },
     },
     disputes: active,
