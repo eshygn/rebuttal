@@ -28,14 +28,16 @@ const FIXTURE_DIR = path.join(process.cwd(), "fixtures/paypal/lifecycle");
 const EVIDENCE_IMAGE = path.join(process.cwd(), "public/evidence/carrier-tracking-NL4471029385US.png");
 
 type StepResult = { n: number; name: string; mode: "LIVE" | "SIMULATED"; status: number; detail: string };
-type Manifest = { transaction_id: string; dispute_id?: string; recorded_at?: string; steps: ManifestStep[] };
+type Manifest = { transaction_id: string; dispute_id?: string; recorded_at?: string; steps: ManifestStep[]; attempts?: Attempt[] };
+type Attempt = { at: string; transaction_id: string; live_steps: number; refused_at?: string; issue?: string; debug_id?: string; diagnosis: string[]; files: string[] };
 type ManifestStep = { file: string; status: number; source: string; note?: string; recorded_at?: string };
 
 const args = process.argv.slice(2);
 const replayOnly = args.includes("--replay") || args.filter((a) => !a.startsWith("--")).length === 0;
 const txnId = args.find((a) => !a.startsWith("--") && !/^\d+(\.\d+)?$/.test(a) && a.length > 8);
-const amount = flag("--amount") ?? "84.00";
-const currency = flag("--currency") ?? "USD";
+let amount = flag("--amount");
+let currency = flag("--currency");
+const RECORDED_DIR = path.join(process.cwd(), "fixtures/paypal/recorded");
 
 function flag(name: string) {
   const i = args.indexOf(name);
@@ -50,8 +52,20 @@ function readFixture<T>(file: string): T {
   return JSON.parse(fs.readFileSync(path.join(FIXTURE_DIR, file), "utf8")) as T;
 }
 
+let redact: <T>(v: T) => T = (v) => v;
+const attempt: Attempt = { at: new Date().toISOString(), transaction_id: "", live_steps: 0, diagnosis: [], files: [] };
+
+/** A real response that is not part of the happy path (a refusal, a lookup) goes to fixtures/paypal/recorded. */
+function recordAside(name: string, body: unknown) {
+  fs.mkdirSync(RECORDED_DIR, { recursive: true });
+  const file = `${txnId}-${name}.json`;
+  fs.writeFileSync(path.join(RECORDED_DIR, file), JSON.stringify(redact(body), null, 2) + "\n");
+  attempt.files.push(`fixtures/paypal/recorded/${file}`);
+}
+
 function record(file: string, status: number, body: unknown) {
-  fs.writeFileSync(path.join(FIXTURE_DIR, file), JSON.stringify(body, null, 2) + "\n");
+  attempt.live_steps++;
+  fs.writeFileSync(path.join(FIXTURE_DIR, file), JSON.stringify(redact(body), null, 2) + "\n");
   const entry: ManifestStep = { file, status, source: "sandbox", recorded_at: new Date().toISOString() };
   const i = manifest.steps.findIndex((s) => s.file === file);
   if (i >= 0) manifest.steps[i] = entry;
@@ -87,8 +101,11 @@ async function main() {
         print({ n, name, mode: "LIVE", status, detail: describe(body) });
         return body;
       } catch (e) {
-        const err = e as { status?: number; body?: unknown; message: string };
-        if (err.body) record(file.replace(".json", ".error.json"), err.status ?? 0, err.body);
+        const err = e as { status?: number; body?: { debug_id?: string; details?: { issue?: string }[] }; message: string };
+        if (err.body) recordAside(file.replace(/^\d+[a-z]?-/, "").replace(".json", ".error"), err.body);
+        attempt.refused_at = name;
+        attempt.issue = err.body?.details?.[0]?.issue ?? String(err.status);
+        attempt.debug_id = err.body?.debug_id;
         console.log(`    ↳ sandbox refused: ${err.message}`);
         console.log(`    ↳ replaying this and the remaining steps from fixtures`);
         live = false;
@@ -107,6 +124,27 @@ async function main() {
   const showDetail = (d: D) =>
     `${d.status} · ${d.dispute_life_cycle_stage ?? "?"} · links: ${d.links.map((l) => l.rel).filter((r) => r !== "self").join(", ") || "none"}`;
 
+  // 0. Preflight: can this seller see the payment, and is it disputable by the configured buyer?
+  if (pp && txnId) {
+    const pf = await import("../src/lib/paypal/preflight");
+    redact = pf.redact;
+    attempt.transaction_id = txnId;
+    const check = await pf.preflight(txnId);
+    if (check.capture) recordAside("capture-lookup", check.capture);
+    if (check.capture) {
+      const c = check.capture;
+      console.log(`    payment: ${c.amount.value} ${c.amount.currency_code} · ${c.status}${c.status_details?.reason ? ` (${c.status_details.reason})` : ""} · payee ${pf.redact(c.payee?.email_address ?? "?")}`);
+    }
+    for (const p of check.problems) console.log(`    ⚠ ${p}`);
+    attempt.diagnosis = check.problems;
+    // Dispute the full payment in its own currency unless told otherwise.
+    amount ??= check.amount?.value;
+    currency ??= check.amount?.currency_code;
+    console.log("");
+  }
+  amount ??= "84.00";
+  currency ??= "USD";
+
   // 1. Buyer opens an "item not received" dispute.
   const created = await step(
     1,
@@ -117,7 +155,7 @@ async function main() {
           pp.createDisputeAsBuyer({
             buyer_transaction_id: txnId,
             reason: "MERCHANDISE_OR_SERVICE_NOT_RECEIVED",
-            amount: { currency_code: currency, value: amount },
+            amount: { currency_code: currency!, value: amount! },
           })
       : null,
     (b) => `dispute ${disputeIdFromLinks(b) ?? "?"}`,
@@ -193,9 +231,13 @@ async function main() {
   d = await step(6, "Confirm final status", "06-show-resolved.json", pp ? show(disputeId) : null, (b) => `${b.status} · ${b.dispute_outcome?.outcome_code ?? "no outcome yet"}`);
 
   if (!replayOnly) {
-    manifest.transaction_id = txnId!;
-    manifest.dispute_id = disputeId;
-    manifest.recorded_at = new Date().toISOString();
+    // Only a run whose create step was live describes the fixtures; every run is logged as an attempt.
+    if (results[0]?.mode === "LIVE") {
+      manifest.transaction_id = txnId!;
+      manifest.dispute_id = disputeId;
+      manifest.recorded_at = new Date().toISOString();
+    }
+    manifest.attempts = [...(manifest.attempts ?? []), attempt];
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
   }
 

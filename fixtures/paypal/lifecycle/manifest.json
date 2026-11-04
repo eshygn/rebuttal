@@ -37,5 +37,24 @@
       "source": "documented-sample",
       "note": "Shaped from developer.paypal.com/api/customer-disputes/v1 schema; replaced by a real sandbox response when the script runs live."
     }
+  ],
+  "attempts": [
+    {
+      "at": "2026-11-04T17:49:05.370Z",
+      "transaction_id": "3KV701938H745371C",
+      "live_steps": 0,
+      "diagnosis": [
+        "PAYPAL_SANDBOX_BUYER_EMAIL is a business (seller) account. The sandbox buyer must be a personal account (…@personal.example.com).",
+        "The payment was made to a personal account, not to this app's business account. The buyer must pay the seller (the business account that owns the REST app).",
+        "The payment is PENDING (UNILATERAL), not COMPLETED. Only completed payments can be disputed."
+      ],
+      "files": [
+        "fixtures/paypal/recorded/3KV701938H745371C-capture-lookup.json",
+        "fixtures/paypal/recorded/3KV701938H745371C-create-dispute.error.json"
+      ],
+      "refused_at": "Buyer opens INR dispute",
+      "issue": "TRANSACTION_NOT_ELIGIBLE",
+      "debug_id": "f12775173ba90"
+    }
   ]
 }

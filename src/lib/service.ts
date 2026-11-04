@@ -10,6 +10,7 @@ import { formatMoney, fromPayPal as moneyFrom, toPayPal } from "./money";
 import * as live from "./paypal/disputes";
 import { paypalLive, readDispute, runAction } from "./paypal/gateway";
 import { PayPalApiError } from "./paypal/http";
+import { preflight } from "./paypal/preflight";
 import {
   simAcceptClaim,
   simAcceptOffer,
@@ -52,9 +53,13 @@ export async function openScenarioDispute(key: string): Promise<{ id: string; mo
   let raw: PPDispute | null = null;
   let note: string | undefined;
   if (txn && (await paypalLive())) {
+    let diagnosis: string[] = [];
     try {
+      // Look the payment up first: PayPal's refusal alone ("TRANSACTION_NOT_ELIGIBLE") doesn't say why.
+      const check = await withDispute(undefined, () => preflight(txn));
+      diagnosis = check.problems;
       const created = await withDispute(undefined, () =>
-        live.createDisputeAsBuyer({ buyer_transaction_id: txn, reason: s.reason, amount }),
+        live.createDisputeAsBuyer({ buyer_transaction_id: txn, reason: s.reason, amount: check.amount ?? amount }),
       );
       const id = disputeIdFromLinks(created.body);
       if (!id) throw new Error("create-dispute returned no dispute id");
@@ -71,7 +76,7 @@ export async function openScenarioDispute(key: string): Promise<{ id: string; mo
       });
       db().prepare("UPDATE orders SET buyer_transaction_id = ? WHERE id = ?").run(txn, o.id);
     } catch (e) {
-      note = `Sandbox create-dispute refused (${e instanceof PayPalApiError ? (e.issue ?? e.status) : (e as Error).message}); simulated`;
+      note = `Sandbox create-dispute refused (${e instanceof PayPalApiError ? (e.issue ?? e.status) : (e as Error).message})${diagnosis.length ? `: ${diagnosis.join(" ")}` : ""} Simulated instead.`;
     }
   } else {
     note = txn ? "PayPal not reachable; simulated" : "No sandbox transaction configured for this dispute; simulated";
