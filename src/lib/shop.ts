@@ -6,7 +6,7 @@ import { env } from "./env";
 import { logEvent } from "./events";
 import { paypalLive } from "./paypal/gateway";
 import * as orders from "./paypal/orders";
-import { orderJson } from "./seed";
+import { orderJson, trackerJson } from "./seed";
 import { SELLER, type ScenarioOrder } from "./scenario";
 
 export const PRODUCTS = [
@@ -103,7 +103,7 @@ export async function addShopTracking(id: string) {
     mode = "live";
   } else {
     const pu = raw.purchase_units?.[0];
-    if (pu?.shipping) pu.shipping.trackers = [{ id: `${o.capture_id}-${number}`, status: "SHIPPED", create_time: tracking.addedAt, update_time: tracking.addedAt }];
+    if (pu?.shipping) pu.shipping.trackers = [trackerJson(o.paypal_order_id, o.capture_id, number)];
     orders.recordSimulatedOrderCall("Add tracking", "POST", `/v2/checkout/orders/${o.paypal_order_id}/track`, { capture_id: o.capture_id, tracking_number: number, carrier: "OTHER", carrier_name_other: "Northline Post" }, raw);
   }
   db().prepare("UPDATE orders SET tracking = ?, raw = ? WHERE id = ?").run(JSON.stringify(tracking), JSON.stringify(raw), id);

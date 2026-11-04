@@ -120,7 +120,7 @@ src/
     workflow.ts           Rebuttal's dispute state machine
     money.ts              integer minor units, PayPal decimal strings, formatting
     scenario.ts, seed.ts  the fictional demo scenario
-scripts/                  sandbox-lifecycle.ts, record-ai.ts, render-evidence.ts
+scripts/                  sandbox-lifecycle.ts, verify-tracking.ts, record-ai.ts, render-evidence.ts
 fixtures/paypal/          recorded and documented PayPal responses
 tests/                    vitest
 ```

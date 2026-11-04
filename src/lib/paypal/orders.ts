@@ -14,7 +14,7 @@ function orders(): OrdersController {
     clientCredentialsAuthCredentials: { oAuthClientId: env.paypalClientId, oAuthClientSecret: env.paypalClientSecret },
     environment: Environment.Sandbox,
     timeout: 30_000,
-    logging: { logLevel: LogLevel.Warn },
+    logging: { logLevel: LogLevel.Error },
   });
   return new OrdersController(client);
 }

@@ -82,9 +82,12 @@ export async function paypalRequest<T>(opts: {
   actor?: PayPalCall["actor"];
   label: string;
   assertion?: string;
+  /** Idempotency key; PayPal requires one when an order carries a payment_source. */
+  requestId?: string;
 }): Promise<{ status: number; body: T }> {
   const headers: Record<string, string> = { Authorization: `Bearer ${await getAccessToken()}` };
   if (opts.assertion) headers["PayPal-Auth-Assertion"] = opts.assertion;
+  if (opts.requestId) headers["PayPal-Request-Id"] = opts.requestId;
   let body: BodyInit | undefined;
   if (opts.multipart) {
     const fd = new FormData();

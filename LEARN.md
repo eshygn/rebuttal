@@ -233,12 +233,12 @@ More choices are in [DECISIONS.md](DECISIONS.md).
 **Really talks to PayPal (verified on 4 Nov 2026):**
 - OAuth login, listing disputes, and the create-dispute endpoint (reached; it rejected a transaction that wasn't the buyer's);
 - creating Orders v2 orders with the Server SDK, and a test-card capture;
+- adding tracking to a captured order (`scripts/verify-tracking.ts`: 201, and the tracker shows up when the order is re-read);
 - the PayPal JS SDK buttons rendering on `/shop`.
 
 **Not yet run live:**
 - a dispute's full lifecycle (evidence, offer, adjudication, buyer accepting). The one transaction tried (4 Nov) was refused, because it went from the shop to the buyer and was still pending. See DECISIONS.md.
 - a completed checkout through the buttons, which needs the sandbox buyer's login;
-- live order tracking (the Server SDK call is written but hasn't run against a real captured order).
 
 All of these currently run through the simulator.
 
@@ -277,9 +277,7 @@ In mock mode, everything PayPal-related on screen is simulated. Nothing pretends
 - [ ] **Confirm the outcome code after a buyer accepts an offer.**
   - *Why:* it's assumed to be `RESOLVED_WITH_PAYOUT`; the docs don't say.
   - *Needs:* the SNAD live run above. Check the API log for `dispute_outcome`.
-- [ ] **Test live order tracking.**
-  - *Why:* the tracking call is written but has never run against a real captured order.
-  - *Needs:* one completed sandbox checkout on `/shop`, then click "Mark shipped + add tracking" and confirm the API log row says LIVE.
+- [x] **Test live order tracking.** Done on 4 Nov 2026 with `npx tsx scripts/verify-tracking.ts` (it needs no buyer login).
 - [ ] **Deploy to Render.**
   - *You:* in Render, choose New → Blueprint, pick this repo and branch (or `main` after merging), and add the keys as environment variables (or leave them empty for mock mode).
   - *Then:* copy the URL into the README's "Hosted demo" line, then `git commit -am "Add hosted URL" && git push`.
