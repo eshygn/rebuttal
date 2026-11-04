@@ -1,0 +1,92 @@
+# Decisions
+
+Choices made while building Rebuttal, and why. Newest at the bottom of each section.
+
+## PayPal
+
+**The Disputes API is called over REST, not through the Server SDK.**
+`@paypal/paypal-server-sdk` 2.5.0 ships controllers for Orders, Payments, Vault, Subscriptions and Transaction Search, but none for disputes. `src/lib/paypal/disputes.ts` calls `/v1/customer/disputes` directly, with request shapes taken from the official OpenAPI schema (`developer.paypal.com/api/customer-disputes/v1/schema.json`). Orders, capture and tracking go through the Server SDK's `OrdersController` (`createOrder`, `captureOrder`, `getOrder`, `createOrderTracking`). We keep the raw JSON body from the SDK so stored data keeps PayPal's own snake_case field names.
+
+**The buyer is played with the documented unsigned JWT.**
+The sandbox-only buyer calls (create dispute, change reason, accept offer) carry a `PayPal-Auth-Assertion` header built exactly as PayPal's set-up page shows: header `{"alg":"none","typ":"JWT"}` and payload `{"iss": PAYPAL_CLIENT_ID, "email": PAYPAL_SANDBOX_BUYER_EMAIL}`, base64url-encoded, with an empty signature.
+
+**What the sandbox confirmed on 4 Nov 2026.**
+- OAuth with the provided app returns the `disputes/create`, `disputes/read-seller`, `disputes/update-seller` and `disputes/read-buyer` scopes, so the buyer-side create call is authorised for this app.
+- `GET /v1/customer/disputes` works and returned an empty list (`fixtures/paypal/recorded/list-disputes-empty.json`).
+- `POST /v1/customer/disputes` with the buyer assertion reaches validation and answers `400 INVALID_REQUEST / TRANSACTION_NOT_ELIGIBLE` for a transaction the buyer did not make (`fixtures/paypal/recorded/create-dispute-ineligible.json`).
+- A real sandbox capture can be made server-side with a test card (`Orders v2 + payment_source.card`), but disputing that capture as the sandbox buyer is also `TRANSACTION_NOT_ELIGIBLE`: PayPal only lets a buyer dispute a payment from their own PayPal account. So the live lifecycle needs a payment made by a person logged in as the sandbox buyer, as the brief anticipated.
+
+**`scripts/sandbox-lifecycle.ts` runs live when given a transaction ID and replays otherwise.**
+Steps: create INR dispute as buyer → seller reads it → seller provides `PROOF_OF_FULFILLMENT` (tracking + carrier screenshot as `evidence_file`) → confirm `UNDER_REVIEW` → sandbox `adjudicate SELLER_FAVOR` → confirm `RESOLVED / RESOLVED_SELLER_FAVOUR`. It follows HATEOAS links: if the dispute is still in the inquiry stage without a `provide_evidence` link, or does not reach review after evidence, it calls the seller `escalate` endpoint and re-reads. Every real response overwrites the matching file in `fixtures/paypal/lifecycle/` and is marked `"source": "sandbox"` in `manifest.json`. The fixtures shipped before that run are marked `"documented-sample"`, shaped from the schema. When a live step fails, the error body is saved next to it (`*.error.json`) and that step and the rest are replayed and printed `SIMULATED`.
+
+Status: waiting on a sandbox transaction ID from a human buyer. Until then the shipped fixtures are documented samples.
+
+**The app has one PayPal adapter with two implementations per action.**
+`src/lib/paypal/gateway.ts` runs each dispute action live for disputes that exist in the sandbox, and through `src/lib/paypal/sim.ts` otherwise. `sim.ts` is a pure state machine over the documented dispute JSON (it is unit-tested). If a live call fails, the simulator replays that one step and the call log shows `SIMULATED` with the sandbox's reason. Each call is labelled with who it is made as: seller, buyer (sandbox) or PayPal (sandbox).
+
+**Demo disputes are opened against configured sandbox transactions.**
+`SANDBOX_INR_TRANSACTION_ID` and `SANDBOX_SNAD_TRANSACTION_ID` bind the two story disputes to real sandbox payments. When set and PayPal answers, "a buyer opens a dispute" is a real `POST /v1/customer/disputes` and every later step for that dispute goes to the sandbox. When unset, the dispute is simulated and every badge says so. The INR scenario is $84.00 USD, the price of the mug pair plus shipping in the demo shop, so a buyer who pays for that product produces a transaction of the right amount.
+
+**Unverified assumption: the outcome code after a buyer accepts an offer.**
+The simulator resolves an accepted offer as `RESOLVED_WITH_PAYOUT` with `amount_refunded` set to the offer. The schema lists that code but the docs do not say which one an accepted offer produces. The workflow treats `RESOLVED_WITH_PAYOUT`, or any resolution after an accepted offer in the offer history, as "settled". To check once a live SNAD run is possible.
+
+**Fictional carrier, carrier `OTHER`.**
+The demo carrier is "Northline Post", so no real carrier's branding appears in evidence images. Tracking is added as `carrier: OTHER` with `carrier_name_other`. This also shows the real gap Rebuttal fills: PayPal's tracker stores the number and a seller-set status (`SHIPPED`), never the carrier's scans.
+
+**JS SDK v5 Smart Buttons.**
+The shop uses `https://www.paypal.com/sdk/js` with `paypal.Buttons({ createOrder, onApprove })`, loaded only in the browser via `next/dynamic(..., { ssr: false })`. `createOrder` and `onApprove` call our server, which uses the Server SDK. Without PayPal keys the shop shows a clearly labelled simulated button that goes through the same server code path.
+
+**The sandbox seller account settles in GBP.** A USD test capture showed a GBP receivable. Irrelevant for disputes, which are in the transaction currency, but worth knowing.
+
+## AI
+
+**Model: newest Gemini Flash on the free tier, with a fallback chain.**
+The Gemini model list on 4 Nov 2026 has `gemini-3.8-flash` as the newest Flash model. When `AI_MODEL` is empty we use the chain `3.8-flash → 3.5-flash → 2.5-flash → 3.5-flash-lite → 3.1-flash-lite → 2.5-flash-lite`. A 503 ("high demand", which 3.8 often returned) or a 429 moves down the chain. A model that answers 429 is skipped for an hour, because…
+
+**The free tier is about 20 requests per model per day.**
+The 429 body says `generate_content_free_tier_requests, limit: 20`. Aliases share a quota (`gemini-3.7-flash` and `gemini-flash-latest` both counted against `gemini-3.8-flash`). One analysis costs about five requests. So:
+- a process-wide limiter caps us at 10 requests/minute (`AI_MAX_RPM`);
+- vision reads are cached by file hash;
+- a whole analysis is cached by a hash of everything it depends on (prompt, dispute, order shipping, tracking, evidence bytes). Re-running the demo after a reset reuses the earlier Gemini run and labels it "cached";
+- when every model is out of quota, Rebuttal replays a **recorded real Gemini run** for that scenario (`src/lib/ai/recorded/*.json`, produced by `scripts/record-ai.ts`) and says so in the status chip and the trace;
+- for disputes with no recording (for example after uploading new evidence), it falls back to the deterministic rules table and labels the result "Rules only".
+
+**Structured output is tool calls with zod schemas, never parsed text.**
+The analyst is a `generateText` tool loop (AI SDK 7). Tools: `get_dispute`, `get_transaction`, `get_tracking_record`, `list_seller_evidence`, `read_carrier_document`, `compare_photos`, `check_evidence_coverage`, and `submit_recommendation` (input schema only, which ends the loop via `hasToolCall`). The vision readers force a single tool call (`toolChoice: { type: "tool" }`) whose input is the zod schema. All model output is validated with zod before use.
+
+**Hard length limits live in code, not in the schema.**
+The first schema had `.max()` on strings; Gemini wrote a 230-character bullet and the whole run failed validation. Limits now sit in the field descriptions as guidance, and `tidyRecommendation` trims and caps confidence at 95 after validation.
+
+**The model reads; the rules decide what counts; the server does the money.**
+- Facts the model cannot be trusted to compute are computed in code and handed back to it: address match against the PayPal ship-to, tracking-number match, and calendar days between delivery and claim (in the seller's time zone: 5 Nov 2:12 pm → 7 Nov 10:00 am is two days, not one).
+- The rules table (`src/lib/rules.ts`) maps each dispute reason to the evidence that answers it, weighted critical/strong/supporting, and produces a baseline action. The UI shows whether the agent agrees.
+- The model proposes `offer_percent`. The server turns it into integer minor units with `percentOf` (basis points, half-up) and clamps it below the disputed amount.
+
+**The prompt states how PayPal treats not-as-described claims.**
+Without it, the agent recommended "accept" for the bowl. With one paragraph explaining that PayPal usually needs the buyer to return a not-as-described item at their own cost before a full refund, so a partial refund that lets them keep it is often taken, it recommends a 40% offer, which matches the rules-table baseline. This is domain knowledge, not a forced answer: the INR and no-tracking cases still come out as fight and accept.
+
+**A not-as-described dispute does not need carrier delivery.**
+The first SNAD rule set required "carrier confirms delivery" as critical, which is irrelevant when the buyer says it arrived but looks wrong. Replaced with "listing discloses natural variation" (strong).
+
+## Product and demo
+
+- **Fictional everything.** Fernhill Ceramics (seller), Jordan Reyes, Priya Natarajan, Sam Whitfield (buyers), Northline Post (carrier). Emails use `.example` domains.
+- **Demo clock.** A stored instant that starts at Saturday 7 Nov 2026, 10:00 PT and only moves when the presenter jumps it. Deadlines count down against it. The carrier screenshot's dates are fixed images, so the clock is fixed rather than relative to wall time.
+- **Demo director.** A dock at the bottom shows the next story beat and runs it with one click. The beats are derived from the database state, so clicking the real buttons in the UI advances the story just as well. For the approve step the dock submits whatever is in the composer, including edits.
+- **Every PayPal call is a toast.** Each new PayPal call pops a toast for five seconds with the endpoint, status and LIVE/SIMULATED badge, so the video can point at every PayPal moment without narration gymnastics. The full log is in the "API log" drawer with request and response JSON.
+- **Three actions, three seeded disputes.** INR with strong proof → fight. SNAD with mixed proof → offer. A small untracked letter → accept (pre-seeded, outside the scripted story, to show the third action).
+- **Uploads.** Sellers can add a carrier screenshot or PDF, or a pre-shipment photo, and re-run the analysis. Gemini reads PDFs natively. Recorded replays are disabled once uploaded evidence is present, so a replay never pretends to have read a file it did not.
+
+## Stack
+
+- **Next.js 16.4 (App Router), React 19.3, TypeScript 5.** `create-next-app` now enables `cacheComponents`; we turned it off because every screen is live data from SQLite, and dynamic route handlers are simpler and correct here.
+- **TypeScript 5, not 7.** `typescript@latest` is 7.0 (the native port); Next's tooling expects the 5.x JS API. Pinned `^5`.
+- **`@types/node@22`** because `vitest@5` declares a peer range that excludes Node 20 types.
+- **SQLite via better-sqlite3**, seeded on first boot and on "Reset demo". The AI cache survives resets on purpose.
+- **Polling, not websockets.** The UI polls `/api/state` every 1.5 s and the open dispute every 0.6–1.5 s. Simple, works on Render's free plan, and fast enough for the agent trace to animate.
+- **Not used: Bryntum, AG Grid/AG Studio, Z3.** The brief's general instructions mention them, and the environment has Bryntum and AG Grid keys, but Rebuttal's stack (Next.js, PayPal, Gemini, SQLite) has no scheduling, grid or solver need. Adding them would be features beyond the brief. Nothing in Rebuttal needs the Bryntum trial registry, so `npm install` works without it.
+- **Fonts:** Fraunces (display serif, the "legal brief" voice), Inter (UI), JetBrains Mono (API log), via `next/font`.
+
+## Network
+
+No host was blocked. Reachable from the build environment: `api-m.sandbox.paypal.com`, `www.paypal.com` (JS SDK), `generativelanguage.googleapis.com`, `fonts.googleapis.com`, `registry.npmjs.org`. In headless Chromium here, `paypalobjects.com` logo SVGs failed through the proxy; the buttons still render.
