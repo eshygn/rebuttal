@@ -71,7 +71,6 @@ async function main() {
   const { disputeIdFromLinks, hasLink } = await import("../src/lib/paypal/types");
   type D = import("../src/lib/paypal/types").PPDispute;
   let live = !replayOnly;
-  let disputeId: string | undefined;
 
   /** Run a step live if we still can; otherwise (or on failure) replay its fixture. */
   async function step<T>(
@@ -123,7 +122,7 @@ async function main() {
       : null,
     (b) => `dispute ${disputeIdFromLinks(b) ?? "?"}`,
   );
-  disputeId = disputeIdFromLinks(created);
+  const disputeId = disputeIdFromLinks(created);
   if (!disputeId) throw new Error("No dispute id in create response");
 
   // 2. Seller reads it. Newly created sandbox disputes can take a few seconds to appear.
