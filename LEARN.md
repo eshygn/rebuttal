@@ -100,7 +100,7 @@ Each was fixed and logged in DECISIONS.md.
 1. **The click.** The button at `src/components/DisputeDetail.tsx:98` calls `run(...)` (line 30). `run` marks the page busy, then calls `api(...)`.
 2. **The request.** `api()` at `src/components/format.ts:33` sends `POST /api/disputes/PP-D-21837/analyse`. `POST` means "do something", as opposed to `GET`, which means "give me something".
 3. **The API route.** Next.js maps that address to the file `src/app/api/disputes/[id]/analyse/route.ts`. Its `POST` function (line 4) calls `handle()` (`src/lib/http.ts:11`). `handle()` turns any error into a tidy JSON reply.
-4. **Start the background job.** `startAnalysis()` at `src/lib/service.ts:119` checks the dispute can be analysed. It starts `analyse()` without waiting (`void analyse(...)`, line 123). The server replies `{"started": true}` right away, so the page doesn't freeze.
+4. **Start the background job.** `startAnalysis()` at `src/lib/service.ts:124` checks the dispute can be analysed. It starts `analyse()` without waiting (`void analyse(...)`, line 128). The server replies `{"started": true}` right away, so the page doesn't freeze.
 5. **Load the case.** `analyse()` (`src/lib/ai/agent.ts:377`) calls `loadCase()` (`src/lib/casefile.ts:71`). That reads the dispute row, the order row and the evidence rows from SQLite through `db()` (`src/lib/db.ts:88`).
 6. **Change state.** `setStage(..., ANALYZE)` (`agent.ts:382`) runs the state machine `transition()` (`src/lib/workflow.ts:25`). The dispute moves from `new` to `analyzing`. An `analyses` row is created (line 385) to hold the progress.
 7. **Collect the facts that need no AI.** `baseFacts()` (`casefile.ts:107`) reads the shipping address, the PayPal tracker (`trackerOf`, line 98), whether a listing exists, and so on.
@@ -110,7 +110,7 @@ Each was fixed and logged in DECISIONS.md.
    - **recorded**: replay a saved real run;
    - **rules**: no AI at all.
 9. **The agent loop (live).** `runLive()` (line 223) calls `generateText()` (line 276) with a list of tools. Gemini answers by asking for tools, step by step. Each tool runs our code:
-   - **`get_dispute`** (`toolGetDispute`, line 111) calls `readDispute()` (`src/lib/paypal/gateway.ts:104`). That fetches the dispute from PayPal, or replays it, and `recordCall()` (`src/lib/calls.ts:13`) logs the call.
+   - **`get_dispute`** (`toolGetDispute`, line 111) calls `readDispute()` (`src/lib/paypal/gateway.ts:108`). That fetches the dispute from PayPal, or replays it, and `recordCall()` (`src/lib/calls.ts:13`) logs the call.
    - **`get_transaction`** (line 128) fetches the PayPal order.
    - **`read_carrier_document`** (line 243) calls `readCarrierDocument()` (`src/lib/ai/vision.ts:20`). That sends the screenshot to Gemini and forces a structured answer (`toolChoice`, line 29). Then `carrierFacts()` (line 174) checks the address match (`addressMatches`, `src/lib/rules.ts:73`) and counts the days before the claim (`daysBetween`, `rules.ts:86`).
    - **`check_evidence_coverage`** (line 268) runs `coverage()` (`rules.ts:255`) against the rules table (`rules.ts:236`).
@@ -126,7 +126,7 @@ Each was fixed and logged in DECISIONS.md.
     - The stage moves to `ready` (line 451).
     - A timeline event is logged (line 453).
     - A live run is also cached (line 412).
-12. **The screen updates by polling.** Meanwhile the page asks the server every 0.6 s (`src/components/App.tsx:80`). It calls `GET /api/disputes/PP-D-21837` (`src/app/api/disputes/[id]/route.ts:4`), which `disputeView()` (`src/lib/views.ts:144`) builds. `Trace` (`DisputeDetail.tsx:194`) shows each tool as it finishes. `Verdict` (line 257) and `Checklist` (line 310) appear when the result is ready.
+12. **The screen updates by polling.** Meanwhile the page asks the server every 0.6 s (`src/components/App.tsx:80`). It calls `GET /api/disputes/PP-D-21837` (`src/app/api/disputes/[id]/route.ts:4`), which `disputeView()` (`src/lib/views.ts:156`) builds. `Trace` (`DisputeDetail.tsx:194`) shows each tool as it finishes. `Verdict` (line 257) and `Checklist` (line 310) appear when the result is ready.
 
 ---
 
@@ -148,7 +148,7 @@ Each was fixed and logged in DECISIONS.md.
 - **Polling** means asking again and again: "anything new?"
 - A **webhook** means the other side calls you when something changes.
 
-Rebuttal polls, both from the browser to our server and when re-reading PayPal, because it's simple and works anywhere. Webhooks are on the "what's next" list. *Analogy:* refreshing a tracking page versus getting a text when the parcel arrives.
+Rebuttal polls in two places: the browser asks our server for updates, and after each action the server re-reads that dispute from PayPal. Polling is simple and works anywhere. Rebuttal does **not** yet check PayPal for *new* disputes, by webhook or by polling the list endpoint. That's a known gap (DECISIONS.md, "Final audit"). *Analogy:* refreshing a tracking page versus getting a text when the parcel arrives.
 
 **Databases and why SQLite.** A database stores data in tables of rows so it survives restarts and can be searched. SQLite is a whole database in one file, with no separate server to run. That's ideal for a demo you can start with one command. *Analogy:* a well-organised filing cabinet, versus a filing department you'd have to staff.
 
@@ -181,13 +181,13 @@ export function percentOf(minor: number, basisPoints: number): number {
 Rebuttal limits itself to 10 requests a minute and caches vision reads and whole analyses. When it can't call Gemini, it falls back down a chain: another model, then a recorded real run, then the rules alone, labelling each one. *Analogy:* a library's daily borrowing limit, keeping your own photocopies, and borrowing from a friend when the library is closed.
 
 **Mocks, adapters, fixtures.**
-- An **adapter** is one doorway with two possible rooms behind it: the real service or a stand-in (`runAction`, `gateway.ts:61`).
+- An **adapter** is one doorway with two possible rooms behind it: the real service or a stand-in (`runAction`, `gateway.ts:65`).
 - A **mock** is the stand-in.
 - **Fixtures** are saved example responses, shaped exactly like the real ones.
 
 That's why the app works with no keys: every outside service has a mock, and the screen says SIMULATED. *Analogy:* a flight simulator; same controls, no real plane.
 
-**Tests.** Tests are small programs that check the code behaves as expected (`npm test` runs 35). They prove that:
+**Tests.** Tests are small programs that check the code behaves as expected (`npm test` runs 38). They prove that:
 
 - the money maths is right;
 - illegal state moves are refused;
