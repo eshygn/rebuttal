@@ -102,3 +102,34 @@ The first SNAD rule set required "carrier confirms delivery" as critical, which 
 ## Network
 
 No host was blocked. Reachable from the build environment: `api-m.sandbox.paypal.com`, `www.paypal.com` (JS SDK), `generativelanguage.googleapis.com`, `fonts.googleapis.com`, `registry.npmjs.org`. In headless Chromium here, `paypalobjects.com` logo SVGs failed through the proxy; the buttons still render.
+
+## Final audit (5 Nov 2026)
+
+A check of the brief and the Definition of Done against what the code does, run from a clean clone. Lint, typecheck, 38 tests and `next build` pass there. The demo story ran start to finish with `next start` in both modes:
+- **Mock mode** (every key unset): all 9 beats, $123.00 USD kept, 10 PayPal calls, all SIMULATED.
+- **Live mode** (real keys): all 9 beats with Gemini live. `gemini-3.1-flash-lite` answered after the newer models were busy or out of quota. It chose fight (95%) and a 30% offer: $45.50 USD kept on the bowl, $129.50 USD in total. All 10 dispute-story PayPal calls were still SIMULATED, because no disputable sandbox transaction is configured.
+
+### Works end to end, live
+- Gemini agent: tool loop, carrier screenshot and PDF reading, photo comparison, zod validation, model fallback chain, caching.
+- PayPal OAuth, Orders v2 create, test-card capture, order tracking (`scripts/verify-tracking.ts`), the payment preflight lookup, and the create-dispute call (reached, then refused with `TRANSACTION_NOT_ELIGIBLE`).
+- PayPal JS SDK Smart Buttons render on `/shop`, and their `createOrder` callback's server path creates real sandbox orders.
+
+### Works only in mock / simulated form
+- Every dispute step after creation: show, provide-evidence, make-offer, accept-claim, adjudicate, accept-offer. The code is written against the official schema and switches to live for any dispute that exists in the sandbox, but none has run live because no dispute could be created.
+- The lifecycle fixtures in `fixtures/paypal/lifecycle/` are documented samples, not recordings.
+
+### Gaps, stated plainly
+- **Rebuttal does not watch the seller's real PayPal inbox.** The brief says "watches the seller's disputes" and lists "list" among the endpoints. `listDisputes()` exists and a manual call returned an empty list, but the app never calls it. The inbox holds the seeded scenario and disputes Rebuttal opened itself. Importing arbitrary sandbox disputes would also need their order and evidence, which Rebuttal only has for its own shop's orders. We left this out rather than add a feature in the final pass. The README and SUBMISSION now say so instead of claiming "watches".
+- **Deadlines are tracked on screen only.** The inbox sorts by deadline and counts down against the demo clock. There are no reminders or notifications.
+- **The JS SDK checkout has not been completed by a buyer.** The buttons render and orders are created, but approving a payment needs a sandbox buyer login we haven't had.
+- **Unverified assumption:** an accepted offer resolving as `RESOLVED_WITH_PAYOUT` (see above).
+- **Live Gemini answers vary.** The offer percentage differed between runs (40% recorded, 30% live). The money maths and the rules-table cross-check are deterministic; the recommendation text is not.
+- **Live analyses can be slow** (over a minute) when the free tier pushes the chain down to later models.
+- **No authentication.** Anyone who can reach the server can reset the demo and trigger sandbox calls and Gemini requests with the configured keys. Fine for a local demo; for a public link, deploy in mock mode or behind a password.
+- **Not deployed yet.** `render.yaml` is written but untested on Render.
+- **First run needs network for fonts.** `next/font` downloads Google Fonts on first dev run and at build time.
+
+### Fixed in this pass
+- The top-bar AI chip now reports a fallback (recorded or rules-only after a rate limit or outage), as the brief requires. Before, it said "Gemini live" regardless.
+- `scripts/sandbox-lifecycle.ts` exits with code 2 when a transaction ID was given but no step ran live, instead of 0.
+- README, DEMO and SUBMISSION no longer claim the app watches or lists disputes, no longer present recorded numbers as guaranteed live results, and say which PayPal steps are simulated.
