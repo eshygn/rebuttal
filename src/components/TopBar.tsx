@@ -58,7 +58,7 @@ export function TopBar({ state, page, onJump, onReset, onOpenLog, busy }: Props)
       {ai && (
         <span className={`chip ${ai.mode}`} title={ai.detail}>
           <span className="dot" />
-          AI: {ai.mode === "live" ? "Gemini live" : "recorded runs"}
+          AI: {ai.mode === "live" ? "Gemini live" : "fallback" in ai && ai.fallback ? "fallback · recorded" : "recorded runs"}
         </span>
       )}
       {onOpenLog && (

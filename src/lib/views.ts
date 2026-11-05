@@ -64,6 +64,20 @@ function summarise(r: DisputeRow): DisputeSummary {
   };
 }
 
+/**
+ * The AI status chip. With a key it says "live" unless the most recent analysis had to fall
+ * back (rate limit, model unavailable), in which case it says so, as the brief requires.
+ */
+function aiStatus(): { mode: "live" | "recorded"; detail: string; fallback?: boolean } {
+  if (!hasAIKey()) return { mode: "recorded", detail: "No Gemini key: recorded analyses" };
+  const last = db()
+    .prepare("SELECT ai_mode, note FROM analyses WHERE status = 'done' ORDER BY finished_at DESC LIMIT 1")
+    .get() as { ai_mode: string; note: string | null } | undefined;
+  if (last && (last.ai_mode === "recorded" || last.ai_mode === "rules"))
+    return { mode: "recorded", fallback: true, detail: last.note ?? "Gemini unavailable: fell back" };
+  return { mode: "live", detail: `Gemini free tier · tries ${aiModelChain().join(" → ")}` };
+}
+
 export async function stateView() {
   const rows = db().prepare("SELECT * FROM disputes ORDER BY created_at DESC").all() as DisputeRow[];
   const all = rows.map(summarise);
@@ -75,9 +89,7 @@ export async function stateView() {
     clock: now(),
     status: {
       paypal: pp,
-      ai: hasAIKey()
-        ? { mode: "live" as const, detail: `Gemini free tier · tries ${aiModelChain().join(" → ")}` }
-        : { mode: "recorded" as const, detail: "No Gemini key: recorded analyses" },
+      ai: aiStatus(),
     },
     disputes: active,
     history,
