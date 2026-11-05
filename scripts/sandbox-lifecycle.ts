@@ -244,6 +244,11 @@ async function main() {
   const liveCount = results.filter((r) => r.mode === "LIVE").length;
   console.log(`\n${liveCount}/${results.length} steps live · final: ${d.status} ${d.dispute_outcome?.outcome_code ?? ""}\n`);
   const ok = d.status === "RESOLVED" && d.dispute_outcome?.outcome_code === "RESOLVED_SELLER_FAVOUR";
+  // A live run that never reached the sandbox is not a success, even though the replay completed.
+  if (!replayOnly && liveCount === 0) {
+    console.log("No step ran live: the sandbox refused at step 1. See the ⚠ lines above. Exit code 2.\n");
+    process.exit(2);
+  }
   process.exit(ok ? 0 : 1);
 }
 
