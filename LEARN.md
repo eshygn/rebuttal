@@ -276,13 +276,9 @@ In mock mode, everything PayPal-related on screen is simulated. Nothing pretends
   - *Why:* it's assumed to be `RESOLVED_WITH_PAYOUT`; the docs don't say.
   - *Needs:* the SNAD live run above. Check the API log for `dispute_outcome`.
 - [x] **Test live order tracking.** Done on 4 Nov 2026 with `npx tsx scripts/verify-tracking.ts` (it needs no buyer login).
-- [ ] **Deploy to Render.**
-  - *You:* in Render, choose New → Blueprint, pick this repo and `main`, and add the keys as environment variables (or leave them empty for mock mode).
-  - *Then:* copy the URL into the README's "Hosted demo" line, then `git commit -am "Add hosted URL" && git push`.
+- [x] **Deploy to Render.** Done on 12 Nov 2026: https://rebuttal-ck5w.onrender.com/ (mock mode).
 - [x] **Merge the PR.** Done; work now goes straight to `main`.
-- [ ] **Record the video** (under 2:50) using [DEMO.md](DEMO.md).
-  - *Before recording:* run the story once and click Reset, so the Gemini result is cached.
-  - *Note:* the free tier resets daily, so record on a fresh day if you want "Gemini live".
+- [x] **Record the video.** Done on 12 Nov 2026 (1:46, Gemini live on screen).
 - [ ] **Re-record the AI fallbacks** (optional; the INR recording predates the final prompt). This uses about 15 Gemini requests: `npx tsx scripts/record-ai.ts`
 - [ ] **Submit on Devpost** before 12 Nov 2026, 12:00 PST. Paste the fields from [SUBMISSION.md](SUBMISSION.md), add the video link, the repo link and the hosted URL.
 

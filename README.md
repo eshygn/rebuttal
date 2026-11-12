@@ -18,7 +18,16 @@ Built for small online sellers who take PayPal: independent shops, marketplace s
 
 ## Judge quickstart
 
-**Hosted demo:** not deployed yet. `render.yaml` is ready for Render's free plan (first load there can take about a minute to wake). Until then, run it locally with the one command below.
+**Hosted demo:** https://rebuttal-ck5w.onrender.com/
+> It runs on Render's free plan, so the first load can take about a minute while the instance wakes up.
+> The hosted demo is set up to run without keys, in mock mode: PayPal calls are simulated and the AI replays recorded real Gemini runs. The two labels at the top of the page show the mode it is in. Anyone can press **Reset demo**, so if the story looks half-finished, reset it.
+
+| | |
+| --- | --- |
+| ![Fight verdict, won](docs/screenshots/1-fight-won.jpg) | ![What PayPal knows vs what the carrier says](docs/screenshots/2-proof-of-delivery.jpg) |
+| ![Partial refund offer, settled](docs/screenshots/3-offer-partial-refund.jpg) | ![PayPal API log with live/simulated labels](docs/screenshots/4-paypal-api-log.jpg) |
+
+*Screenshots are from a run with live keys on 12 Nov 2026 (Gemini live on `gemini-3.5-flash-lite`; dispute calls simulated).*
 
 **Run it locally in mock mode (no keys needed):**
 
@@ -147,7 +156,7 @@ submit_recommendation ─── Recommendation (zod): action, confidence, reason
 
 ### Deploy
 
-`render.yaml` is a Render Blueprint for one free web service (`npm ci && npm run build`, `npm start`). Add the keys as environment variables, or leave them empty for mock mode. SQLite lives on the instance disk and is re-seeded on boot. It has not been deployed yet.
+`render.yaml` is a Render Blueprint for one free web service (`npm ci && npm run build`, `npm start`). Add the keys as environment variables, or leave them empty for mock mode. SQLite lives on the instance disk and is re-seeded on boot. It is deployed at https://rebuttal-ck5w.onrender.com/ (deployed and checked by the project owner on 12 Nov 2026).
 
 **Before deploying with real keys, note that there is no login.** Anyone with the URL can reset the demo, trigger sandbox calls with your app's credentials and spend your Gemini quota. For a public judge link, mock mode (no keys) is the safe choice.
 

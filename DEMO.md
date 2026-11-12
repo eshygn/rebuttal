@@ -5,7 +5,7 @@ Record at **1440×900**, browser zoom 100%, light system theme. Hide the bookmar
 
 ## Before you record
 
-1. `npm run dev` (or open the hosted URL and wait for it to wake).
+1. `npm run dev`, or open the hosted demo at https://rebuttal-ck5w.onrender.com/ and wait for it to wake (it runs in mock mode).
 2. Click **Reset demo**. The inbox shows one open dispute (Sam Whitfield, $14) and the "Before Rebuttal" losses.
 3. **Pick a mode and know what it shows.**
    - **Mock mode** (no keys, or `REBUTTAL_MOCK=1`): chips read **PayPal: mock** and **AI: recorded responses**. The agent replays recorded real Gemini runs, so the numbers in this script (95%, 40%, $39, $123) are exactly what appears. Every PayPal toast says **SIMULATED**.

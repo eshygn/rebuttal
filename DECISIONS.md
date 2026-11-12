@@ -205,3 +205,12 @@ A check of the brief and the Definition of Done against what the code does, run 
 - For all three transactions, PayPal's authoritative answer at the create step is what the attempts log records.
   - With `4JS…` the single blocker is the buyer identity: `invalid_request: "No permissions to set target_client_id"`, meaning the buyer hasn't given consent.
   - The owner saved the "Log in with PayPal" settings on 12 Nov, and PayPal says they take up to three hours to apply. After that, the consent link and then the lifecycle can be retried.
+
+**Deployed and recorded, 12 Nov 2026.**
+- **Hosted demo:** https://rebuttal-ck5w.onrender.com/, deployed by the owner from `render.yaml` on Render's free plan and confirmed working by them. It could not be opened from the build environment (the host is not on its network allowlist), so that check is the owner's. It is meant to run without keys, in mock mode.
+- **Demo video:** recorded from a local production build with live keys.
+  - PayPal showed "sandbox live"; the dispute calls were simulated and labelled.
+  - Gemini answered both disputes live on `gemini-3.5-flash-lite`: fight at 95%, and a 25% offer ($48.75 USD kept, $132.75 USD in total).
+  - The regular Flash models (3.8, 3.6, 3.5) were overloaded or out of free quota on both of the owner's keys at the time, so the recording set `AI_MODEL=gemini-3.5-flash-lite` for that run only. The app's defaults are unchanged.
+- **Screenshots** in `docs/screenshots/` come from that same run.
+- **Known issue seen in that run:** the model asked for the photo comparison and the rules check in the same step, so the rules check ran before the photo result arrived. The agent panel shows that earlier score (58/100) while the Evidence rules card shows the final one (75/100). The recommendation and the final score use the complete facts. Not fixed, to avoid a code change after recording.
