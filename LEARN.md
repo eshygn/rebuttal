@@ -263,13 +263,12 @@ In mock mode, everything PayPal-related on screen is simulated. Nothing pretends
 
 - [ ] **Run the sandbox lifecycle live.**
   - *Why not done:* both transactions tried so far were refused (details in DECISIONS.md):
-    - **4 Nov** (`3KV701938H745371C`): wrong direction and still pending.
-    - **12 Nov** (`03W14967454290406`): $500.00 USD paid *to* the personal account, so the wrong way round again. PayPal also refused to let the app act as the buyer, because the buyer hasn't given the app consent ("Log in with PayPal").
+    - **4 Nov** (`3KV701938H745371C`): still pending, and the buyer email was the seller's.
+    - **12 Nov** (`03W14967454290406`, then `4JS2751162711051N`): `4JS…` is a valid, completed $84.00 USD payment from the buyer to the seller. PayPal still refused to let the app act as the buyer, because the buyer's consent ("Log in with PayPal") hasn't taken effect.
   - *You:*
-    1. give buyer consent once (the steps are in the chat of 12 Nov and in DECISIONS.md);
-    2. log in at sandbox.paypal.com **as the personal account** (`sb-tqii…@personal.example.com`) and send $84.00 USD **to** `sb-vgizy…@business.example.com`;
-    3. copy that payment's transaction ID from the personal account's activity page.
-  - *Then:* `npx tsx scripts/sandbox-lifecycle.ts <TRANSACTION_ID>`, then commit `fixtures/paypal/lifecycle/` and update DECISIONS.md.
+    1. wait for PayPal to apply the "Log in with PayPal" settings (up to three hours after saving);
+    2. open the consent link as the personal account and agree (details in DECISIONS.md).
+  - *Then:* `npx tsx scripts/sandbox-lifecycle.ts 4JS2751162711051N`, then commit `fixtures/paypal/lifecycle/` and update DECISIONS.md.
 - [ ] **Bind the demo story to real sandbox disputes** (optional, so the video shows LIVE badges).
   - *You:* make two buyer payments ($84.00 and $65.00 USD).
   - *Then:* put the IDs in `.env` as `SANDBOX_INR_TRANSACTION_ID=` and `SANDBOX_SNAD_TRANSACTION_ID=`, then `npm run dev`.

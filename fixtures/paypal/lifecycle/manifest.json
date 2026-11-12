@@ -70,6 +70,21 @@
       ],
       "refused_at": "Buyer opens INR dispute",
       "issue": "invalid_request: No permissions to set target_client_id"
+    },
+    {
+      "at": "2026-11-12T19:30:54.703Z",
+      "transaction_id": "4JS2751162711051N",
+      "live_steps": 0,
+      "diagnosis": [
+        "The payment went TO the configured buyer. The buyer must be the one who paid.",
+        "PayPal would not let this app act as the buyer (PayPal-Auth-Assertion refused). The sandbox buyer has to give the app consent once, through \"Log in with PayPal\" with the disputes/create scope (developer.paypal.com/disputes/set-up#get-buyer-consent)."
+      ],
+      "files": [
+        "fixtures/paypal/recorded/4JS2751162711051N-capture-lookup.json",
+        "fixtures/paypal/recorded/4JS2751162711051N-create-dispute.error.json"
+      ],
+      "refused_at": "Buyer opens INR dispute",
+      "issue": "invalid_request: No permissions to set target_client_id"
     }
   ]
 }

@@ -29,7 +29,7 @@ In the demo story:
   - PayPal OAuth, Orders v2 create and capture, and order tracking;
   - the JS SDK buttons rendering.
 - **Simulated:** the dispute steps after creation.
-  - The sandbox reached our create-dispute call and refused every transaction we could give it (one was a payment *from* the shop *to* the buyer, still pending).
+  - The sandbox reached our create-dispute call and refused every transaction we could give it (one payment was still pending; for a later, valid one PayPal wanted the sandbox buyer's one-time consent first).
   - So no dispute has yet existed for the later steps to act on.
   - Those steps are coded against PayPal's schema and run live as soon as a dispute exists. Until then a tested simulator replays them in PayPal's documented format, and every call is labelled SIMULATED on screen.
 
@@ -44,7 +44,7 @@ In the demo story:
 
 ## Challenges we ran into
 
-- **The sandbox only lets a buyer dispute their own PayPal payment.** We could create a real sandbox capture server-side with a test card, but disputing it returned `TRANSACTION_NOT_ELIGIBLE`. We then got a transaction ID from a human tester, but it was also refused. Our new preflight lookup showed why: the money had gone from the shop *to* the buyer, the payment was still pending, and the configured buyer email was the seller's own account. So we built against documented fixtures, made the refusal reasons visible in both the script and the app, and labelled everything the sandbox won't reach as "simulated".
+- **The sandbox only lets a buyer dispute their own PayPal payment.** We could create a real sandbox capture server-side with a test card, but disputing it returned `TRANSACTION_NOT_ELIGIBLE`. We then got a transaction ID from a human tester, but it was also refused. Our new preflight lookup showed why: the payment was still pending, and the configured buyer email was the seller's own account. A later, valid payment got further, and PayPal then asked for the sandbox buyer's one-time consent before the app may act as the buyer. So we built against documented fixtures, made the refusal reasons visible in both the script and the app, and labelled everything the sandbox won't reach as "simulated".
 - **The Gemini free tier allows about 20 requests per model per day**, and the newest Flash model often returned "high demand". We settled on a short, explicit order: newest Flash, then `gemini-3.5-flash`, then recorded responses (real runs saved earlier). Around it are per-model quota tracking, a request limiter, and caching of vision reads and whole analyses. The screen always names the model in use, or says it is showing recorded responses and why.
 - **Schema strictness vs model output.** A hard `max(220)` on a reasoning bullet failed an entire agent run. Limits moved into the field descriptions and a post-validation tidy step.
 - **Getting the advice right, not just the extraction.** At first the agent told the seller to accept a "not as described" claim. Once the prompt explained that PayPal normally makes the buyer return the item at their own cost before a full refund, it chose a partial refund, matching what the rules table and an experienced seller would do.

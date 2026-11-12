@@ -196,3 +196,12 @@ A check of the brief and the Definition of Done against what the code does, run 
 - From here, both PayPal sign-in endpoints (`/signin/authorize` and `/connect`) return that same error for this app's client ID, with every return URL tried, and even with the basic `openid` scope alone.
 - So the problem is not the disputes scope: "Log in with PayPal" is most likely not enabled for the app, or its Return URL wasn't saved.
 - This test can't fully confirm it, because a made-up client ID gets the same page. It needs a change in the app's settings on developer.paypal.com.
+
+**Correction, 12 Nov: the "wrong direction" diagnosis was mistaken.**
+- The preflight looks a buyer-side transaction ID up with `GET /v2/payments/captures/{id}`. That returns the **buyer's copy** of the record, whose `payee` is the buyer, even when the buyer correctly paid the seller.
+- The third transaction, `4JS2751162711051N` ($84.00 USD), proves it. The owner's buyer receipt says "Sent to Test Store" (`sb-vgizy…@business.example.com`), yet the lookup showed the personal account as payee.
+- So the earlier "paid to the buyer" readings for `03W14967454290406` and `3KV701938H745371C` were probably wrong too. (`3KV…` really was `PENDING`, which alone blocks a dispute.)
+- The direction check is removed. The preflight now checks only that the payment is completed and that the buyer email isn't a business account.
+- For all three transactions, PayPal's authoritative answer at the create step is what the attempts log records.
+  - With `4JS…` the single blocker is the buyer identity: `invalid_request: "No permissions to set target_client_id"`, meaning the buyer hasn't given consent.
+  - The owner saved the "Log in with PayPal" settings on 12 Nov, and PayPal says they take up to three hours to apply. After that, the consent link and then the lifecycle can be retried.

@@ -26,7 +26,6 @@ export type Preflight = {
   capture?: CaptureLookup;
 };
 
-const isPersonal = (email?: string) => !!email && /@personal\.example\.com$/i.test(email);
 const isBusiness = (email?: string) => !!email && /@business\.example\.com$/i.test(email);
 
 /** Pure: judge a capture lookup. Exported for tests. */
@@ -43,13 +42,9 @@ export function judge(capture: CaptureLookup | null, buyerEmail: string): Prefli
     );
     return { found: false, ok: false, problems };
   }
-  if (capture.payee?.email_address && capture.payee.email_address.toLowerCase() === buyerEmail.toLowerCase()) {
-    problems.push("The payment went TO the configured buyer. The buyer must be the one who paid.");
-  } else if (isPersonal(capture.payee?.email_address)) {
-    problems.push(
-      "The payment was made to a personal account, not to this app's business account. The buyer must pay the seller (the business account that owns the REST app).",
-    );
-  }
+  // Not checked: payment direction. Looking up a *buyer-side* transaction ID returns the buyer's copy
+  // of the record, whose "payee" is the buyer, even when the buyer correctly paid the seller (seen
+  // 12 Nov 2026 with a receipt showing "Sent to Test Store"). Only PayPal's create call can tell.
   if (capture.status !== "COMPLETED") {
     problems.push(
       `The payment is ${capture.status}${capture.status_details?.reason ? ` (${capture.status_details.reason})` : ""}, not COMPLETED. Only completed payments can be disputed.`,
@@ -79,7 +74,7 @@ export function explainCreateRefusal(body: unknown): string | null {
   if (/target_client_id/i.test(b?.error_description ?? ""))
     return "PayPal would not let this app act as the buyer (PayPal-Auth-Assertion refused). The sandbox buyer has to give the app consent once, through \"Log in with PayPal\" with the disputes/create scope (developer.paypal.com/disputes/set-up#get-buyer-consent).";
   if (b?.details?.[0]?.issue === "TRANSACTION_NOT_ELIGIBLE")
-    return "PayPal says this payment can't be disputed by this buyer (see the payment check above).";
+    return "PayPal says this payment can't be disputed by this buyer: it must be a completed payment the buyer made to this app's seller account.";
   return null;
 }
 

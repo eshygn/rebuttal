@@ -50,7 +50,7 @@ Requirements: Node 20.9 or newer. Mock mode makes no calls to PayPal or Gemini (
 **Read this first: the current status (12 Nov 2026).**
 - **PayPal:** the current sandbox app works.
   - Real: login, the shop creating orders, card capture and adding tracking (`scripts/verify-tracking.ts`).
-  - Still simulated: every **dispute** step, because no buyer has yet made a disputable payment to this app's seller account (`sb-vgizy53112725@business.example.com`).
+  - Still simulated: every **dispute** step. A buyer payment to this app's seller account now exists, but PayPal won't let the app open the dispute as the buyer until the buyer's one-time consent ("Log in with PayPal") takes effect.
 - **Gemini:** the current key works.
   - In the live run, the newest Flash model (`gemini-3.8-flash`) was skipped and `gemini-3.5-flash` answered both disputes. The top bar showed `AI: Gemini live · gemini-3.5-flash`.
   - Live answers vary between runs: this run offered 20% on the bowl ($52.00 USD kept), while the recorded run offered 40%.
@@ -62,7 +62,7 @@ Details in [DECISIONS.md](DECISIONS.md).
 | Gemini agent: tool loop, carrier screenshot/PDF reading, photo comparison | **Real** when a model answers (verified 12 Nov) | Order: newest Flash (`gemini-3.8-flash`), then `gemini-3.5-flash`, then recorded responses. The top bar names the model in use, or says "recorded responses" and why. |
 | PayPal OAuth, Orders v2 create, card capture, order **tracking** | **Real** (verified 12 Nov) | `scripts/verify-tracking.ts` captures a test-card payment and adds a tracker (201). The shop's `POST /v2/checkout/orders` also ran live. |
 | PayPal JS SDK Smart Buttons on `/shop` | **Real** (renders; verified 4–5 Nov) | A full buyer checkout through the buttons needs a sandbox buyer login, which we haven't had, so it is untested. |
-| Disputes: create as buyer | **Reached, refused** | Every attempt so far was refused before a dispute existed. 4 Nov: wrong-direction, pending payment. 12 Nov: the $500.00 USD payment also went *to* the buyer, and PayPal refused the buyer identity header ("No permissions to set target_client_id") because the buyer hasn't given the app consent yet. |
+| Disputes: create as buyer | **Reached, refused** | Every attempt so far was refused before a dispute existed. 4 Nov: the payment was still pending and the buyer email was the seller's. 12 Nov: a completed $84.00 USD payment from the buyer to the seller exists, but PayPal refused the buyer identity header ("No permissions to set target_client_id") because the buyer hasn't yet given the app consent. |
 | Disputes: show, provide-evidence, make-offer, accept-claim, adjudicate, accept-offer | **Simulated** | Written against the official schema and wired to go live for any dispute that exists in the sandbox. None has run live, because no dispute could be created. |
 | Disputes: list | **Not used** | The client function exists (`listDisputes`) and a manual call returned an empty list. The app does not poll PayPal for new disputes; its inbox comes from the demo scenario and from disputes it opens itself. |
 
@@ -142,7 +142,7 @@ submit_recommendation ─── Recommendation (zod): action, confidence, reason
 3. To run the story on real sandbox disputes, you need payments the sandbox buyer made from their own PayPal account (PayPal won't let a buyer dispute anyone else's payment):
    - log in to sandbox.paypal.com as the sandbox **personal** account and pay the **business account that owns the REST app** (not the other way round): **$84.00 USD** for the INR story and **$65.00 USD** for the SNAD story;
    - wait until the payment shows as completed, then copy each **buyer-side transaction ID** into `SANDBOX_INR_TRANSACTION_ID` and `SANDBOX_SNAD_TRANSACTION_ID`;
-   - restart. "A buyer opens a dispute" now tries a real sandbox dispute. If PayPal refuses, the call log says why (wrong direction, payment not completed, buyer email is the seller) and the story continues simulated.
+   - restart. "A buyer opens a dispute" now tries a real sandbox dispute. If PayPal refuses, the call log says why (payment not completed, buyer email is the seller, buyer consent missing) and the story continues simulated.
 4. Optional: `npx tsx scripts/verify-tracking.ts` checks the Tracking API, and `npx tsx scripts/record-ai.ts` re-records the Gemini fallback runs (about 15 requests of free-tier quota).
 
 ### Deploy

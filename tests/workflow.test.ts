@@ -124,7 +124,6 @@ describe("sandbox preflight", () => {
     expect(r.ok).toBe(false);
     expect(r.amount).toEqual({ currency_code: "GBP", value: "40.00" });
     expect(r.problems.join(" ")).toMatch(/business \(seller\) account/);
-    expect(r.problems.join(" ")).toMatch(/made to a personal account/);
     expect(r.problems.join(" ")).toMatch(/PENDING \(UNILATERAL\)/);
   });
 

@@ -1,0 +1,44 @@
+{
+  "id": "4JS2751162711051N",
+  "amount": {
+    "currency_code": "USD",
+    "value": "84.00"
+  },
+  "final_capture": true,
+  "seller_protection": {
+    "status": "NOT_ELIGIBLE"
+  },
+  "disbursement_mode": "INSTANT",
+  "seller_receivable_breakdown": {
+    "gross_amount": {
+      "currency_code": "USD",
+      "value": "84.00"
+    },
+    "net_amount": {
+      "currency_code": "USD",
+      "value": "84.00"
+    }
+  },
+  "status": "COMPLETED",
+  "supplementary_data": {
+    "related_ids": {}
+  },
+  "payee": {
+    "email_address": "sb-tqii…@personal.example.com",
+    "merchant_id": "H8HM…"
+  },
+  "create_time": "2026-11-12T19:30:06Z",
+  "update_time": "2026-11-12T19:30:06Z",
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v2/payments/captures/4JS2751162711051N",
+      "rel": "self",
+      "method": "GET"
+    },
+    {
+      "href": "https://api.sandbox.paypal.com/v2/payments/captures/4JS2751162711051N/refund",
+      "rel": "refund",
+      "method": "POST"
+    }
+  ]
+}
