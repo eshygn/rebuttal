@@ -18,19 +18,17 @@ export const hasPayPalKeys = () => !env.forceMock && !!env.paypalClientId && !!e
 export const hasAIKey = () => !env.forceMock && !!env.googleKey;
 
 /**
- * Newest Gemini Flash models on the free tier (checked against the Gemini API model list on
- * 2026-11-04). The free tier allows roughly 20 requests per model per day, and each model has
- * its own quota, so we walk down this list when a model is overloaded (503) or out of quota (429).
+ * The model order, as the project owner specified: Gemini's newest Flash model first, then
+ * gemini-2.5-flash, then (outside this list) recorded responses. "Newest Flash" was
+ * gemini-3.8-flash in the Gemini API model list on 2026-11-12. AI_MODEL overrides the first
+ * entry and AI_FALLBACK_MODEL the second; e.g. keys created after 2.5 was retired for new users
+ * get a 404 from gemini-2.5-flash and can set AI_FALLBACK_MODEL to a model they can use.
  */
-export const FLASH_FALLBACK_CHAIN = [
-  "gemini-3.8-flash",
-  "gemini-3.5-flash",
-  "gemini-2.5-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-3.1-flash-lite",
-  "gemini-2.5-flash-lite",
-];
+export const NEWEST_FLASH = "gemini-3.8-flash";
+export const DEFAULT_FALLBACK_MODEL = "gemini-2.5-flash";
 
 export function aiModelChain(): string[] {
-  return env.aiModel ? [env.aiModel, ...FLASH_FALLBACK_CHAIN.filter((m) => m !== env.aiModel)] : FLASH_FALLBACK_CHAIN;
+  const first = env.aiModel || NEWEST_FLASH;
+  const second = process.env.AI_FALLBACK_MODEL?.trim() || DEFAULT_FALLBACK_MODEL;
+  return first === second ? [first] : [first, second];
 }

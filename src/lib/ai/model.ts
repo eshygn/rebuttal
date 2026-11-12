@@ -23,6 +23,8 @@ function statusOf(e: unknown): number | undefined {
 
 export const isRateLimit = (e: unknown) => statusOf(e) === 429 || /quota|rate.?limit|RESOURCE_EXHAUSTED/i.test(String((e as Error)?.message));
 const isOverloaded = (e: unknown) => [500, 503, 504].includes(statusOf(e) ?? 0) || /overloaded|high demand|UNAVAILABLE/i.test(String((e as Error)?.message));
+/** The model is not offered to this key (e.g. "no longer available to new users"): try the next one. */
+const isUnavailableModel = (e: unknown) => statusOf(e) === 404 || /no longer available|not found for API version/i.test(String((e as Error)?.message));
 
 // ---- Rate limiting: free tier is roughly 10 requests/minute on Flash models ------------
 
@@ -82,7 +84,7 @@ export function chainModel(): ModelHandle {
         } catch (e) {
           // Free-tier quotas are per model, so a 429 on one model is a reason to try the next.
           if (isRateLimit(e)) exhausted.set(ids[idx], Date.now() + EXHAUSTED_MS);
-          if ((isOverloaded(e) || isRateLimit(e)) && idx < models.length - 1) {
+          if ((isOverloaded(e) || isRateLimit(e) || isUnavailableModel(e)) && idx < models.length - 1) {
             idx++;
             continue;
           }

@@ -68,14 +68,16 @@ function summarise(r: DisputeRow): DisputeSummary {
  * The AI status chip. With a key it says "live" unless the most recent analysis had to fall
  * back (rate limit, model unavailable), in which case it says so, as the brief requires.
  */
-function aiStatus(): { mode: "live" | "recorded"; detail: string; fallback?: boolean } {
-  if (!hasAIKey()) return { mode: "recorded", detail: "No Gemini key: recorded analyses" };
+function aiStatus(): { mode: "live" | "recorded"; detail: string; fallback?: boolean; model?: string } {
+  if (!hasAIKey()) return { mode: "recorded", detail: "No Gemini key: recorded responses" };
   const last = db()
-    .prepare("SELECT ai_mode, note FROM analyses WHERE status = 'done' ORDER BY finished_at DESC LIMIT 1")
-    .get() as { ai_mode: string; note: string | null } | undefined;
+    .prepare("SELECT ai_mode, model, note FROM analyses WHERE status = 'done' ORDER BY finished_at DESC LIMIT 1")
+    .get() as { ai_mode: string; model: string | null; note: string | null } | undefined;
+  const order = `Order: ${aiModelChain().join(" → ")} → recorded responses`;
   if (last && (last.ai_mode === "recorded" || last.ai_mode === "rules"))
-    return { mode: "recorded", fallback: true, detail: last.note ?? "Gemini unavailable: fell back" };
-  return { mode: "live", detail: `Gemini free tier · tries ${aiModelChain().join(" → ")}` };
+    return { mode: "recorded", fallback: true, detail: `${last.note ?? "Gemini unavailable: fell back"} · ${order}` };
+  // The model that answered the most recent live analysis, so the screen shows which one is in use.
+  return { mode: "live", model: last?.model ?? undefined, detail: order };
 }
 
 export async function stateView() {
