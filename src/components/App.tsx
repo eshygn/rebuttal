@@ -196,8 +196,8 @@ function Welcome({ state }: { state: AppState }) {
       <div style={{ maxWidth: 520 }}>
         <h2>Disputes freeze your money. Rebuttal gets it back.</h2>
         <p>
-          Rebuttal watches your PayPal disputes, gathers the proof each one needs, and tells you whether to fight, offer a partial refund, or accept.
-          You approve; it submits through the PayPal Disputes API and tracks every deadline.
+          Rebuttal takes each PayPal dispute, gathers the proof it needs, and tells you whether to fight, offer a partial refund, or accept.
+          You approve; it submits through the PayPal Disputes API and counts down every deadline.
         </p>
         <p className="small">
           {open} open dispute{open === 1 ? "" : "s"} · pick one on the left, or press <b>Next</b> below to run the demo story.
