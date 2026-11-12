@@ -8,10 +8,10 @@ Record at **1440×900**, browser zoom 100%, light system theme. Hide the bookmar
 1. `npm run dev` (or open the hosted URL and wait for it to wake).
 2. Click **Reset demo**. The inbox shows one open dispute (Sam Whitfield, $14) and the "Before Rebuttal" losses.
 3. **Pick a mode and know what it shows.**
-   - **Mock mode** (no keys, or `REBUTTAL_MOCK=1`): chips read **PayPal: mock** and **AI: recorded runs**. The agent replays recorded real Gemini runs, so the numbers in this script (95%, 40%, $39, $123) are exactly what appears. Every PayPal toast says **SIMULATED**.
-   - **Live keys**: chips read **PayPal: sandbox live** and **AI: Gemini live**. Gemini answers live, so read the confidence and offer amount off the screen; a live run on 5 Nov chose 30% ($45.50 kept, $129.50 total). The dispute PayPal calls still show **SIMULATED** unless `SANDBOX_INR_TRANSACTION_ID` / `SANDBOX_SNAD_TRANSACTION_ID` hold sandbox payments PayPal accepts. As of 5 Nov, none does.
+   - **Mock mode** (no keys, or `REBUTTAL_MOCK=1`): chips read **PayPal: mock** and **AI: recorded responses**. The agent replays recorded real Gemini runs, so the numbers in this script (95%, 40%, $39, $123) are exactly what appears. Every PayPal toast says **SIMULATED**.
+   - **Live keys**: chips read **PayPal: sandbox live** and **AI: Gemini live · <model>**. Gemini answers live, so read the confidence and offer amount off the screen; a live run on 5 Nov chose 30% ($45.50 kept, $129.50 total). The dispute PayPal calls still show **SIMULATED** unless `SANDBOX_INR_TRANSACTION_ID` / `SANDBOX_SNAD_TRANSACTION_ID` hold sandbox payments PayPal accepts. As of 5 Nov, none does.
    - Either way, say "the sandbox" for the PayPal-decides and buyer-accepts steps, and keep the SIMULATED badge visible. Don't claim a live PayPal ruling.
-4. Run the story once off-camera, then **Reset demo**. With live keys this warms the Gemini cache; otherwise a live analysis can take a minute or more while it walks down the free-tier model chain.
+4. Run the story once off-camera, then **Reset demo**. With live keys this warms the Gemini cache. Otherwise a live analysis can take a minute or more if the newest Flash model is busy, before it falls back to `gemini-2.5-flash` and then to recorded responses.
 5. Keep the dock (bottom, dark) visible. Every story beat is its **Next →** button.
 
 ## Script

@@ -71,7 +71,7 @@ It also writes a live trace for the UI, picks the mode (live, cached, recorded o
 - **The model reads; code computes.** Address match, tracking match and days-before-claim are computed in code and handed to the model. The model proposes an offer *percentage*; `finalise()` turns it into integer cents with `percentOf` and clamps it.
 - **Structured output only:** every answer is a tool call checked against a zod schema (`ai/schemas.ts`). Length limits are applied after validation, because hard schema limits made whole runs fail.
 - **Built for the free tier** (about 20 requests per model per day):
-  - a model chain with per-model quota tracking (`ai/model.ts`);
+  - a fixed order with per-model quota tracking (`ai/model.ts`): newest Flash (`gemini-3.8-flash`), then `gemini-2.5-flash`, then recorded responses, all overridable with `AI_MODEL` / `AI_FALLBACK_MODEL`;
   - a 10-per-minute limiter;
   - vision and whole-analysis caches;
   - replay of recorded real runs;

@@ -8,7 +8,7 @@ import { recordCall } from "../calls";
 import { now } from "../clock";
 import { env, hasPayPalKeys } from "../env";
 import * as live from "./disputes";
-import { PayPalApiError, paypalReachable } from "./http";
+import { PayPalApiError, paypalProbeError, paypalReachable } from "./http";
 import { SimError, subsequentAction } from "./sim";
 import type { PPDispute } from "./types";
 
@@ -23,7 +23,7 @@ export type PayPalStatus = { mode: "live" | "mock"; detail: string; warning?: bo
 export async function paypalStatus(): Promise<PayPalStatus> {
   if (env.forceMock) return { mode: "mock", detail: "REBUTTAL_MOCK=1" };
   if (!hasPayPalKeys()) return { mode: "mock", detail: "No PayPal sandbox keys" };
-  if (!(await paypalReachable())) return { mode: "mock", detail: "PayPal sandbox unreachable" };
+  if (!(await paypalReachable())) return { mode: "mock", detail: `${paypalProbeError ?? "PayPal sandbox unreachable"}: using the simulator`, warning: true };
   const warning = /@business\.example\.com$/i.test(env.paypalBuyerEmail)
     ? " · Warning: PAYPAL_SANDBOX_BUYER_EMAIL is a business account; buyer-side sandbox calls need the personal (buyer) account"
     : !env.paypalBuyerEmail

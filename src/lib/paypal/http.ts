@@ -134,11 +134,20 @@ export async function paypalRequest<T>(opts: {
 
 /** Quick reachability + credential check, cached for the process lifetime. */
 let reachable: Promise<boolean> | null = null;
+/** Why the last check failed, in plain words, for the status chip. */
+export let paypalProbeError: string | null = null;
 export function paypalReachable(): Promise<boolean> {
   if (!env.paypalClientId || !env.paypalClientSecret) return Promise.resolve(false);
   reachable ??= getAccessToken()
-    .then(() => true)
-    .catch(() => {
+    .then(() => {
+      paypalProbeError = null;
+      return true;
+    })
+    .catch((e) => {
+      paypalProbeError =
+        e instanceof PayPalApiError && e.status === 401
+          ? "PayPal rejected the client ID / secret (invalid_client)"
+          : "PayPal sandbox unreachable";
       reachable = null; // allow a retry on the next request
       return false;
     });

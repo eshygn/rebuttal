@@ -29,3 +29,5 @@ services:
         sync: false
       - key: AI_MODEL
         sync: false
+      - key: AI_FALLBACK_MODEL
+        sync: false

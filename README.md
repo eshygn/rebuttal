@@ -44,20 +44,26 @@ Requirements: Node 20.9 or newer. Mock mode makes no calls to PayPal or Gemini (
 
 ---
 
-## What runs live today, and what doesn't
+## Real vs simulated
 
-Checked on 4–5 Nov 2026 against the PayPal sandbox and the Gemini API. Details in [DECISIONS.md](DECISIONS.md).
+"Real" means the call went to PayPal's sandbox or to Google's Gemini API. "Simulated" means Rebuttal replayed it from its built-in simulator or from a recorded earlier response. The screen always labels which one you're seeing.
+
+**Read this first: the current status (12 Nov 2026).**
+- **PayPal:** the sandbox credentials set up on 12 Nov are rejected by PayPal (`invalid_client`). Until they're replaced, **every PayPal call in the app is simulated**, and the PayPal chip says why. The "Live" rows below were verified on 4–5 Nov with an earlier sandbox app.
+- **Gemini:** the current key works, but at the time of testing `gemini-3.8-flash` was overloaded and `gemini-2.5-flash` is "no longer available to new users" for this key. So the app ended up on **recorded responses** (real Gemini runs recorded earlier), labelled on screen. `gemini-3.5-flash` and `gemini-3.6-flash` do work with this key; see `AI_FALLBACK_MODEL` below.
+
+Details in [DECISIONS.md](DECISIONS.md).
 
 | Part | Live? | Notes |
 | --- | --- | --- |
-| Gemini agent: tool loop, carrier screenshot/PDF reading, photo comparison | **Live** with a key | Ran live end to end on all three demo disputes. The free tier allows about 20 requests per model per day, so it falls back down a model chain, then to recorded real runs, and the status chip says so. |
-| PayPal OAuth, Orders v2 create, card capture, order **tracking** | **Live** | `scripts/verify-tracking.ts` captures a test-card payment and adds a tracker (201). |
-| PayPal JS SDK Smart Buttons on `/shop` | **Live** (renders) | A full buyer checkout through the buttons needs a sandbox buyer login, which we haven't had, so it is untested. |
+| Gemini agent: tool loop, carrier screenshot/PDF reading, photo comparison | **Real** when a model answers (verified 4–5 Nov) | Order: newest Flash (`gemini-3.8-flash`), then `gemini-2.5-flash`, then recorded responses. The top bar names the model in use, or says "recorded responses" and why. |
+| PayPal OAuth, Orders v2 create, card capture, order **tracking** | **Real** (verified 4–5 Nov, earlier credentials) | `scripts/verify-tracking.ts` captures a test-card payment and adds a tracker (201). Simulated with today's rejected credentials. |
+| PayPal JS SDK Smart Buttons on `/shop` | **Real** (renders; verified 4–5 Nov) | A full buyer checkout through the buttons needs a sandbox buyer login, which we haven't had, so it is untested. |
 | Disputes: create as buyer | **Reached, refused** | Authorised and validated, but every transaction tried was ineligible. The one supplied was paid *from* the shop *to* the buyer, and was still pending. |
 | Disputes: show, provide-evidence, make-offer, accept-claim, adjudicate, accept-offer | **Simulated** | Written against the official schema and wired to go live for any dispute that exists in the sandbox. None has run live, because no dispute could be created. |
 | Disputes: list | **Not used** | The client function exists (`listDisputes`) and a manual call returned an empty list. The app does not poll PayPal for new disputes; its inbox comes from the demo scenario and from disputes it opens itself. |
 
-In live mode today, the whole dispute story still shows **SIMULATED** on every PayPal call, unless you set a sandbox transaction ID that PayPal accepts (see below). Only the AI is live in the story.
+**Only works in mock mode, today:** the whole dispute story. Even with working PayPal credentials, every dispute call shows **SIMULATED** until you set a sandbox transaction ID that PayPal accepts (see below).
 
 ---
 
@@ -115,15 +121,20 @@ submit_recommendation ─── Recommendation (zod): action, confidence, reason
 - **The rules decide what counts.** `src/lib/rules.ts` maps each dispute reason to the evidence that answers it (critical / strong / supporting) and gives a baseline action. The screen shows whether the agent agrees ("✓ Rules table agrees").
 - **Code does the facts and the money.** Address matching, tracking-number matching and "days between delivery and claim" are computed in code and handed to the model. The model proposes an offer *percentage*; the server converts it to integer minor units and clamps it below the disputed amount.
 - **Structured, validated output only.** Every model output is a tool call validated by a zod schema. Nothing is parsed from free text.
-- **Free-tier aware.** Requests are capped at 10 per minute, and vision reads and whole analyses are cached. The model chain falls through `gemini-3.8-flash → 3.5-flash → 2.5-flash → lite` models on 503/429. With no key, or when every model is out of quota, Rebuttal replays a **recorded real Gemini run**, and both the top-bar chip and the agent panel say so. With no recording either (for example after uploading new evidence), it falls back to the rules table and labels the result "Rules only".
-- **Live runs can be slow.** When the newest models are busy, an analysis can take a minute or more as it walks down the chain.
+- **Fallback order.** Gemini's newest Flash model (`gemini-3.8-flash`), then `gemini-2.5-flash`, then **recorded responses** (real Gemini runs saved earlier in `src/lib/ai/recorded/`).
+  - A model moves on to the next step when it's overloaded (503), out of quota (429) or not offered to your key (404).
+  - The top bar shows `AI: Gemini live · <model>`, or `AI: recorded responses (Gemini unavailable)` with the reason on hover, and the agent panel says the same.
+  - `AI_MODEL` replaces the first model and `AI_FALLBACK_MODEL` the second. New Gemini keys can't use `gemini-2.5-flash` (404), so with such a key set `AI_FALLBACK_MODEL=gemini-3.5-flash` if you want a live second step.
+  - If there's no recording either (for example after uploading new evidence), the rules table decides and the result is labelled "Rules only".
+- **Free-tier aware.** Requests are capped at 10 per minute, and vision reads and whole analyses are cached, so a demo reset doesn't spend quota.
+- **Live runs can be slow.** When the first model is busy, an analysis can take a minute or more before it falls back.
 
 ## Run with live sandbox keys
 
 1. Copy `.env.example` to `.env` and fill in:
    - `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`: a **sandbox** REST app (developer.paypal.com → Apps & Credentials).
    - `PAYPAL_SANDBOX_BUYER_EMAIL`: your sandbox **personal** account (it ends in `@personal.example.com`). Using the business account here is the most common mistake; the PayPal chip shows ⚠ if you do. The buyer-side sandbox calls need the `disputes/create` scope on the app and the buyer's consent (see PayPal's *Set up buyer-side credentials* page).
-   - `GOOGLE_GENERATIVE_AI_API_KEY`: from Google AI Studio. `AI_MODEL` is optional.
+   - `GOOGLE_GENERATIVE_AI_API_KEY`: from Google AI Studio. `AI_MODEL` and `AI_FALLBACK_MODEL` are optional (see "Fallback order" above).
 2. `npm run dev`. The chips should read **PayPal: sandbox live** and **AI: Gemini live**.
 3. To run the story on real sandbox disputes, you need payments the sandbox buyer made from their own PayPal account (PayPal won't let a buyer dispute anyone else's payment):
    - log in to sandbox.paypal.com as the sandbox **personal** account and pay the **business account that owns the REST app** (not the other way round): **$84.00 USD** for the INR story and **$65.00 USD** for the SNAD story;

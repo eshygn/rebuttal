@@ -53,7 +53,8 @@ The shop uses `https://www.paypal.com/sdk/js` with `paypal.Buttons({ createOrder
 ## AI
 
 **Model: newest Gemini Flash on the free tier, with a fallback chain.**
-The Gemini model list on 4 Nov 2026 has `gemini-3.8-flash` as the newest Flash model. When `AI_MODEL` is empty we use the chain `3.8-flash → 3.5-flash → 2.5-flash → 3.5-flash-lite → 3.1-flash-lite → 2.5-flash-lite`. A 503 ("high demand", which 3.8 often returned) or a 429 moves down the chain. A model that answers 429 is skipped for an hour, because…
+*Superseded on 12 Nov 2026: see "Update, 12 Nov 2026" at the end. The order is now newest Flash → `gemini-2.5-flash` → recorded responses.*
+The Gemini model list on 4 Nov 2026 has `gemini-3.8-flash` as the newest Flash model. When `AI_MODEL` was empty we used the chain `3.8-flash → 3.5-flash → 2.5-flash → 3.5-flash-lite → 3.1-flash-lite → 2.5-flash-lite`. A 503 ("high demand", which 3.8 often returned) or a 429 moves down the chain. A model that answers 429 is skipped for an hour, because…
 
 **The free tier is about 20 requests per model per day.**
 The 429 body says `generate_content_free_tier_requests, limit: 20`. Aliases share a quota (`gemini-3.7-flash` and `gemini-flash-latest` both counted against `gemini-3.8-flash`). One analysis costs about five requests. So:
@@ -133,3 +134,39 @@ A check of the brief and the Definition of Done against what the code does, run 
 - The top-bar AI chip now reports a fallback (recorded or rules-only after a rate limit or outage), as the brief requires. Before, it said "Gemini live" regardless.
 - `scripts/sandbox-lifecycle.ts` exits with code 2 when a transaction ID was given but no step ran live, instead of 0.
 - README, DEMO and SUBMISSION no longer claim the app watches or lists disputes, no longer present recorded numbers as guaranteed live results, and say which PayPal steps are simulated.
+
+## Update, 12 Nov 2026
+
+**Project rules from the owner.**
+- Commits are made as Nisaar (`120457154+eshygn@users.noreply.github.com`), with no assistant author or co-author.
+- `.claude/hooks/session-start.sh` sets that identity at the start of every session; it's registered in `.claude/settings.json`.
+- Work goes straight to `main`, with no pull requests.
+
+**AI order changed to exactly what the owner asked:** Gemini's newest Flash model, then `gemini-2.5-flash`, then recorded responses.
+- Newest Flash is `gemini-3.8-flash` in the model list on 12 Nov. The four other models in the old chain were removed.
+- A 404 ("model not available to this key") now also moves to the next step, as do 503 and 429.
+- The top bar names the model that answered the last analysis, or says "recorded responses (Gemini unavailable)" with the reason on hover.
+- `AI_MODEL` and `AI_FALLBACK_MODEL` override the two models without a code change.
+
+**What the new keys did when tested on 12 Nov:**
+- **Gemini key: valid.**
+  - `gemini-3.8-flash`: 503 "high demand" on both tries.
+  - `gemini-2.5-flash`: **404, "no longer available to new users"**. So with this key the requested second step can never answer.
+  - Working on this key: `gemini-3.5-flash`, `gemini-3.6-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-flash-latest`.
+  - We kept the owner's order (2.5 as the default fallback) and documented `AI_FALLBACK_MODEL=gemini-3.5-flash` as the switch, rather than quietly choosing a different model.
+- **PayPal client ID / secret: rejected** (`invalid_client`) by both the sandbox and live OAuth endpoints.
+  - The secret supplied has the same `AQ.…` prefix as the Gemini key, which is Google's key format, not PayPal's, so it is probably the wrong value.
+  - Until it's replaced, every PayPal call is simulated.
+  - The PayPal chip now says "PayPal rejected the client ID / secret" instead of the misleading "unreachable".
+- The keys live only in a local, git-ignored `.env`. Commands were run with the inherited environment variables removed, so only those values were used.
+
+**Verified on 12 Nov from a clean clone, using only `.env`:**
+- `npm ci`, lint, typecheck, 38 tests and `next build` all pass.
+- The 9-beat story completes on `next start`.
+- PayPal: simulated (credentials rejected).
+- AI: recorded responses, because 3.8 was overloaded and 2.5 returned 404. The top bar and the agent panel both said so.
+
+**Commit history.**
+- 12 of the 14 commits on `main` before this update are authored "Claude <noreply@anthropic.com>". They were made by the coding assistant before the owner's identity rule existed.
+- No commit has a co-author trailer.
+- Rewriting them needs a force-push to `main`, which waits for the owner's go-ahead.

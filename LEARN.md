@@ -117,9 +117,9 @@ Each was fixed and logged in DECISIONS.md.
    - **`submit_recommendation`** (line 273) ends the loop (`stopWhen`, line 281).
 
    Every tool call is written to the trace through the `Tracer` (line 89), so the page can show progress.
-10. **Rate limits and fallbacks.** Each Gemini request goes through `chainModel()` (`src/lib/ai/model.ts:64`):
-    - `acquireSlot()` (line 35) waits for a free slot;
-    - on "busy" or "quota used up", it tries the next model (line 84).
+10. **Rate limits and fallbacks.** Each Gemini request goes through `chainModel()` (`src/lib/ai/model.ts:66`):
+    - `acquireSlot()` (line 37) waits for a free slot;
+    - on "busy", "quota used up" or "model not available to this key", it tries the next model (line 86). The order is newest Flash (`gemini-3.8-flash`), then `gemini-2.5-flash`.
 11. **Finish.**
     - `finalise()` (`agent.ts:353`) converts any offer percentage into whole cents with `percentOf()` (`src/lib/money.ts:65`).
     - The result is saved with `status: "done"` (line 443).
@@ -178,7 +178,7 @@ export function percentOf(minor: number, basisPoints: number): number {
 - A **cache** remembers answers so you don't ask twice.
 - A **fallback** is plan B when plan A fails.
 
-Rebuttal limits itself to 10 requests a minute and caches vision reads and whole analyses. When it can't call Gemini, it falls back down a chain: another model, then a recorded real run, then the rules alone, labelling each one. *Analogy:* a library's daily borrowing limit, keeping your own photocopies, and borrowing from a friend when the library is closed.
+Rebuttal limits itself to 10 requests a minute and caches vision reads and whole analyses. When it can't call Gemini, it falls back in a fixed order: `gemini-3.8-flash`, then `gemini-2.5-flash`, then a recorded real run, then the rules alone if there's no recording, labelling each one. *Analogy:* a library's daily borrowing limit, keeping your own photocopies, and borrowing from a friend when the library is closed.
 
 **Mocks, adapters, fixtures.**
 - An **adapter** is one doorway with two possible rooms behind it: the real service or a stand-in (`runAction`, `gateway.ts:65`).
@@ -202,7 +202,7 @@ They do **not** prove that PayPal's live sandbox behaves like our simulator, or 
 - A **branch** is a separate line of snapshots, so work doesn't disturb `main`.
 - A **pull request** (PR) asks to merge a branch into `main` and shows every change for review.
 
-This work is on `claude/gallant-ritchie-nxxyov`, and the PR is https://github.com/eshygn/rebuttal/pull/1. *Analogy:* drafts of an essay, a separate copy for edits, and handing the edited copy to your editor.
+The first version of this project went through one pull request. Since 12 Nov, work goes straight to `main`, with each commit made as the project owner. *Analogy:* drafts of an essay, a separate copy for edits, and handing the edited copy to your editor.
 
 **Deployment and `render.yaml`.** Deployment means running the app on a public server. Render reads `render.yaml` and then:
 
@@ -279,9 +279,9 @@ In mock mode, everything PayPal-related on screen is simulated. Nothing pretends
   - *Needs:* the SNAD live run above. Check the API log for `dispute_outcome`.
 - [x] **Test live order tracking.** Done on 4 Nov 2026 with `npx tsx scripts/verify-tracking.ts` (it needs no buyer login).
 - [ ] **Deploy to Render.**
-  - *You:* in Render, choose New → Blueprint, pick this repo and branch (or `main` after merging), and add the keys as environment variables (or leave them empty for mock mode).
+  - *You:* in Render, choose New → Blueprint, pick this repo and `main`, and add the keys as environment variables (or leave them empty for mock mode).
   - *Then:* copy the URL into the README's "Hosted demo" line, then `git commit -am "Add hosted URL" && git push`.
-- [ ] **Merge the PR** after review: https://github.com/eshygn/rebuttal/pull/1
+- [x] **Merge the PR.** Done; work now goes straight to `main`.
 - [ ] **Record the video** (under 2:50) using [DEMO.md](DEMO.md).
   - *Before recording:* run the story once and click Reset, so the Gemini result is cached.
   - *Note:* the free tier resets daily, so record on a fresh day if you want "Gemini live".
