@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { simAcceptClaim, simAcceptOffer, simAdjudicate, simCreate, simMakeOffer, simProvideEvidence, simRequireEvidence, SimError } from "@/lib/paypal/sim";
+import { simAcceptClaim, simAcceptOffer, simAdjudicate, simCreate, simMakeOffer, simProvideEvidence, SimError } from "@/lib/paypal/sim";
 import { allowedActions, fromPayPal, transition, TransitionError } from "@/lib/workflow";
 
 const T0 = "2026-11-07T18:00:00.000Z";
@@ -53,11 +53,6 @@ describe("sandbox simulator (PayPal dispute state machine)", () => {
     const resolved = simAcceptClaim(fresh(), T0);
     expect(() => simProvideEvidence(resolved, [], T0)).toThrow(SimError);
     expect(() => simAcceptClaim(resolved, T0)).toThrow(SimError);
-  });
-
-  it("can send a reviewed dispute back for more seller evidence", () => {
-    const d = simRequireEvidence(simProvideEvidence(fresh(), [], T0), "SELLER_EVIDENCE", T0);
-    expect(d.status).toBe("WAITING_FOR_SELLER_RESPONSE");
   });
 
   it("does not mutate its input", () => {

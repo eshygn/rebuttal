@@ -473,5 +473,3 @@ export function getAnalysis(disputeId: string) {
     finishedAt: row.finished_at,
   };
 }
-
-export const _test = { carrierFacts, photoFacts };

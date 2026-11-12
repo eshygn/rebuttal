@@ -48,14 +48,6 @@ export const acceptClaim = (id: string, body: { note: string; accept_claim_type?
 export const escalate = (id: string, note: string) =>
   paypalRequest<PPSubsequentAction>({ method: "POST", path: `${base}/${id}/escalate`, json: { note }, label: "Escalate to claim" });
 
-export const sendMessage = (id: string, message: string) =>
-  paypalRequest<PPSubsequentAction>({
-    method: "POST",
-    path: `${base}/${id}/send-message`,
-    label: "Send message to buyer",
-    multipart: [{ kind: "json", name: "input", value: { message } }],
-  });
-
 // ---- Sandbox-only endpoints that play the buyer and PayPal -------------------
 
 export function createDisputeAsBuyer(input: {
@@ -89,16 +81,6 @@ export function createDisputeAsBuyer(input: {
   });
 }
 
-export const changeReasonAsBuyer = (id: string, reason: DisputeReason, note: string) =>
-  paypalRequest<PPSubsequentAction>({
-    method: "POST",
-    path: `${base}/${id}/change-reason`,
-    actor: "buyer",
-    label: "Sandbox · buyer changes reason",
-    assertion: buyerAuthAssertion(),
-    multipart: [{ kind: "json", name: "input", value: { reason, note } }],
-  });
-
 export const acceptOfferAsBuyer = (id: string, note: string) =>
   paypalRequest<PPSubsequentAction>({
     method: "POST",
@@ -107,15 +89,6 @@ export const acceptOfferAsBuyer = (id: string, note: string) =>
     label: "Sandbox · buyer accepts offer",
     assertion: buyerAuthAssertion(),
     json: { note },
-  });
-
-export const requireEvidence = (id: string, action: "BUYER_EVIDENCE" | "SELLER_EVIDENCE") =>
-  paypalRequest<PPSubsequentAction>({
-    method: "POST",
-    path: `${base}/${id}/require-evidence`,
-    actor: "paypal",
-    label: `Sandbox · PayPal requires ${action === "SELLER_EVIDENCE" ? "seller" : "buyer"} evidence`,
-    json: { action },
   });
 
 export const adjudicate = (id: string, outcome: "SELLER_FAVOR" | "BUYER_FAVOR") =>

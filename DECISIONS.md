@@ -214,3 +214,8 @@ A check of the brief and the Definition of Done against what the code does, run 
   - The regular Flash models (3.8, 3.6, 3.5) were overloaded or out of free quota on both of the owner's keys at the time, so the recording set `AI_MODEL=gemini-3.5-flash-lite` for that run only. The app's defaults are unchanged.
 - **Screenshots** in `docs/screenshots/` come from that same run.
 - **Known issue seen in that run:** the model asked for the photo comparison and the rules check in the same step, so the rules check ran before the photo result arrived. The agent panel shows that earlier score (58/100) while the Evidence rules card shows the final one (75/100). The recommendation and the final score use the complete facts. Not fixed, to avoid a code change after recording.
+
+**Clean-up, 12 Nov 2026 (after the deadline).**
+- The Devpost deadline was missed, so the project was not submitted. The deliverables stay in the repo for reuse.
+- Removed code nothing used: the `send-message`, `change-reason` and `require-evidence` client calls, their simulator counterparts, and one test for them (39 tests remain). `listDisputes` is kept for the planned inbox sync.
+- Removed the old work branch; `main` is the only branch.

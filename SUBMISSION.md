@@ -36,7 +36,7 @@ In the demo story:
 ## How we built it
 
 - **Next.js 16 (App Router) + TypeScript**, one Node service, SQLite (better-sqlite3) seeded with a fictional scenario.
-- **PayPal**: JS SDK Smart Buttons for the shop checkout; the **PayPal Server SDK** (`OrdersController`) for create/capture/get order and **order tracking**; the **Disputes API** over REST for show, provide-evidence (multipart with files), make-offer and accept-claim. We also wrote the **sandbox-only** endpoints that play the buyer (create dispute and accept offer, with a `PayPal-Auth-Assertion` JWT) and play PayPal (`adjudicate`, plus `escalate` and `require-evidence` in the lifecycle script). A lifecycle script first looks the payment up, explains in plain English why it can or can't be disputed, then runs the lifecycle and saves every real response as a fixture.
+- **PayPal**: JS SDK Smart Buttons for the shop checkout; the **PayPal Server SDK** (`OrdersController`) for create/capture/get order and **order tracking**; the **Disputes API** over REST for show, provide-evidence (multipart with files), make-offer and accept-claim. We also wrote the **sandbox-only** endpoints that play the buyer (create dispute and accept offer, with a `PayPal-Auth-Assertion` JWT) and play PayPal (`adjudicate`, plus `escalate` in the lifecycle script). A lifecycle script first looks the payment up, explains in plain English why it can or can't be disputed, then runs the lifecycle and saves every real response as a fixture.
 - **AI**: Vercel AI SDK 7 with `@ai-sdk/google` on the Gemini API free tier. The analyst is a tool-calling agent (`get_dispute`, `get_transaction`, `get_tracking_record`, `read_carrier_document`, `compare_photos`, `check_evidence_coverage`, `submit_recommendation`). Every output is a zod-validated tool call, and vision readers force a single structured tool call.
 - **Guardrails in code, not prompts**: address matching, tracking-number matching and delivery-vs-claim dates are computed deterministically and handed to the model. Offer amounts are converted from a percentage to integer minor units on the server. The rules table gives a baseline that the agent's answer is shown against.
 - **One adapter, two implementations** for every external call: live (PayPal sandbox, Gemini) and mock (a tested sandbox state machine that emits PayPal's documented JSON, plus recorded real Gemini runs). Every PayPal call is shown on screen as LIVE or SIMULATED.
@@ -55,7 +55,7 @@ In the demo story:
 - It is honest: it recommends a partial refund or a full refund when fighting would lose, and it tells the seller when the rules table disagrees with it.
 - Every PayPal moment is visible on screen, live or simulated, with the request and response JSON one click away.
 - Money is integer minor units end to end, always shown with its currency.
-- 38 tests cover the money maths, both state machines, the payment preflight, the rules table, the AI schemas and the whole demo story.
+- 39 tests cover the money maths, both state machines, the payment preflight, the rules table, the AI schemas and the whole demo story.
 
 ## What we learned
 

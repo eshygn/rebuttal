@@ -92,7 +92,7 @@ Details in [DECISIONS.md](DECISIONS.md).
 | Seller accepts | `POST /v1/customer/disputes/{id}/accept-claim` | `src/lib/service.ts` |
 | PayPal decides | `POST /v1/customer/disputes/{id}/adjudicate` *(sandbox only)* | `src/lib/service.ts` |
 | Buyer responds | `POST /v1/customer/disputes/{id}/accept-offer` with buyer assertion *(sandbox only)* | `src/lib/service.ts` |
-| Lifecycle script only | `escalate`, `require-evidence` *(sandbox only)* when a dispute stalls in the inquiry stage | `scripts/sandbox-lifecycle.ts`, `src/lib/paypal/disputes.ts` |
+| Lifecycle script only | `escalate`, when a dispute stalls in the inquiry stage | `scripts/sandbox-lifecycle.ts`, `src/lib/paypal/disputes.ts` |
 
 Rebuttal follows PayPal's HATEOAS links (the links each API response carries to the actions allowed next): the action buttons it offers are the ones the dispute's `links` allow.
 
@@ -166,7 +166,7 @@ submit_recommendation ─── Recommendation (zod): action, confidence, reason
 npm run dev         # http://localhost:3000
 npm run lint
 npm run typecheck
-npm test            # 38 vitest tests: money maths, both state machines, preflight, rules, AI schemas, the full demo story
+npm test            # 39 vitest tests: money maths, both state machines, preflight, rules, AI schemas, the full demo story
 npm run build
 ```
 

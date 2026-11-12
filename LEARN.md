@@ -187,7 +187,7 @@ Rebuttal limits itself to 10 requests a minute and caches vision reads and whole
 
 That's why the app works with no keys: every outside service has a mock, and the screen says SIMULATED. *Analogy:* a flight simulator; same controls, no real plane.
 
-**Tests.** Tests are small programs that check the code behaves as expected (`npm test` runs 38). They prove that:
+**Tests.** Tests are small programs that check the code behaves as expected (`npm test` runs 39). They prove that:
 
 - the money maths is right;
 - illegal state moves are refused;
@@ -280,7 +280,7 @@ In mock mode, everything PayPal-related on screen is simulated. Nothing pretends
 - [x] **Merge the PR.** Done; work now goes straight to `main`.
 - [x] **Record the video.** Done on 12 Nov 2026 (1:46, Gemini live on screen).
 - [ ] **Re-record the AI fallbacks** (optional; the INR recording predates the final prompt). This uses about 15 Gemini requests: `npx tsx scripts/record-ai.ts`
-- [ ] **Submit on Devpost** before 12 Nov 2026, 12:00 PST. Paste the fields from [SUBMISSION.md](SUBMISSION.md), add the video link, the repo link and the hosted URL.
+- [ ] **Submit on Devpost.** The 12 Nov 2026 deadline was missed, so this was not submitted. [SUBMISSION.md](SUBMISSION.md) is kept as ready-made text for a future submission or a portfolio page.
 
 ---
 

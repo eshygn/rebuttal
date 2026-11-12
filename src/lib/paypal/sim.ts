@@ -158,11 +158,6 @@ export function simAcceptClaim(d: PPDispute, now: string): PPDispute {
   });
 }
 
-export function simEscalate(d: PPDispute, now: string): PPDispute {
-  if (d.dispute_life_cycle_stage !== "INQUIRY") refuse("INVALID_DISPUTE_STATE", "Only inquiries can be escalated.");
-  return next(d, now, { dispute_life_cycle_stage: "CHARGEBACK" });
-}
-
 export function simAdjudicate(d: PPDispute, outcome: "SELLER_FAVOR" | "BUYER_FAVOR", now: string): PPDispute {
   requireStatus(d, "UNDER_REVIEW", "adjudicate");
   return next(d, now, {
@@ -172,13 +167,5 @@ export function simAdjudicate(d: PPDispute, outcome: "SELLER_FAVOR" | "BUYER_FAV
         ? { outcome_code: "RESOLVED_SELLER_FAVOUR" }
         : { outcome_code: "RESOLVED_BUYER_FAVOUR", amount_refunded: d.dispute_amount },
     links: links(d.dispute_id, []),
-  });
-}
-
-export function simRequireEvidence(d: PPDispute, action: "BUYER_EVIDENCE" | "SELLER_EVIDENCE", now: string): PPDispute {
-  requireStatus(d, "UNDER_REVIEW", "require-evidence");
-  return next(d, now, {
-    status: action === "SELLER_EVIDENCE" ? "WAITING_FOR_SELLER_RESPONSE" : "WAITING_FOR_BUYER_RESPONSE",
-    links: links(d.dispute_id, action === "SELLER_EVIDENCE" ? ["provide_evidence", "accept_claim"] : []),
   });
 }
