@@ -190,3 +190,9 @@ A check of the brief and the Definition of Done against what the code does, run 
   - `PayPalApiError` now reads PayPal's OAuth-shaped errors (`error` / `error_description`) as well as the REST shape; before, this refusal printed blank.
   - The script and the app's call log now explain this refusal in plain English.
   - Two tests cover both error shapes.
+
+**Buyer consent attempt, 12 Nov: not yet possible.**
+- The owner opened the "Log in with PayPal" consent link and PayPal answered "This action isn't supported (invalid client_ID or redirect_uri)".
+- From here, both PayPal sign-in endpoints (`/signin/authorize` and `/connect`) return that same error for this app's client ID, with every return URL tried, and even with the basic `openid` scope alone.
+- So the problem is not the disputes scope: "Log in with PayPal" is most likely not enabled for the app, or its Return URL wasn't saved.
+- This test can't fully confirm it, because a made-up client ID gets the same page. It needs a change in the app's settings on developer.paypal.com.
