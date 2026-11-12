@@ -119,7 +119,7 @@ Each was fixed and logged in DECISIONS.md.
    Every tool call is written to the trace through the `Tracer` (line 89), so the page can show progress.
 10. **Rate limits and fallbacks.** Each Gemini request goes through `chainModel()` (`src/lib/ai/model.ts:66`):
     - `acquireSlot()` (line 37) waits for a free slot;
-    - on "busy", "quota used up" or "model not available to this key", it tries the next model (line 86). The order is newest Flash (`gemini-3.8-flash`), then `gemini-2.5-flash`.
+    - on "busy", "quota used up" or "model not available to this key", it tries the next model (line 86). The order is newest Flash (`gemini-3.8-flash`), then `gemini-3.5-flash`.
 11. **Finish.**
     - `finalise()` (`agent.ts:353`) converts any offer percentage into whole cents with `percentOf()` (`src/lib/money.ts:65`).
     - The result is saved with `status: "done"` (line 443).
@@ -178,7 +178,7 @@ export function percentOf(minor: number, basisPoints: number): number {
 - A **cache** remembers answers so you don't ask twice.
 - A **fallback** is plan B when plan A fails.
 
-Rebuttal limits itself to 10 requests a minute and caches vision reads and whole analyses. When it can't call Gemini, it falls back in a fixed order: `gemini-3.8-flash`, then `gemini-2.5-flash`, then a recorded real run, then the rules alone if there's no recording, labelling each one. *Analogy:* a library's daily borrowing limit, keeping your own photocopies, and borrowing from a friend when the library is closed.
+Rebuttal limits itself to 10 requests a minute and caches vision reads and whole analyses. When it can't call Gemini, it falls back in a fixed order: `gemini-3.8-flash`, then `gemini-3.5-flash`, then a recorded real run, then the rules alone if there's no recording, labelling each one. *Analogy:* a library's daily borrowing limit, keeping your own photocopies, and borrowing from a friend when the library is closed.
 
 **Mocks, adapters, fixtures.**
 - An **adapter** is one doorway with two possible rooms behind it: the real service or a stand-in (`runAction`, `gateway.ts:65`).

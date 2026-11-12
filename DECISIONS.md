@@ -166,7 +166,15 @@ A check of the brief and the Definition of Done against what the code does, run 
 - PayPal: simulated (credentials rejected).
 - AI: recorded responses, because 3.8 was overloaded and 2.5 returned 404. The top bar and the agent panel both said so.
 
-**Commit history.**
-- 12 of the 14 commits on `main` before this update are authored "Claude <noreply@anthropic.com>". They were made by the coding assistant before the owner's identity rule existed.
-- No commit has a co-author trailer.
-- Rewriting them needs a force-push to `main`, which waits for the owner's go-ahead.
+**Commit history.** Commits made before the identity rule existed carried a different author. None had a co-author trailer. They were re-authored with the owner's approval (below).
+
+**Later on 12 Nov: new PayPal secret, second model changed, history rewritten.**
+- **PayPal:** the owner supplied the correct sandbox secret, and OAuth now works.
+  - The app's seller account is `sb-vgizy53112725@business.example.com` (merchant `VCUK…`), with the same dispute scopes as before.
+  - Verified live: OAuth, Orders v2 create (the shop's route), test-card capture, and add tracking (`scripts/verify-tracking.ts`, 201).
+  - List disputes returns 0: no buyer has made a disputable payment to this account, so the dispute story is still simulated.
+- **AI:** the owner chose `gemini-3.5-flash` as the second model in place of `gemini-2.5-flash`, which returns 404 for their key.
+  - Live run from a clean clone using only `.env`: `gemini-3.8-flash` was skipped, `gemini-3.5-flash` answered both disputes, and the top bar showed it.
+  - Results: fight (95%) and a 20% offer, $136.00 USD kept in total. Live offers vary between runs; the recorded run uses 40%.
+- **History:** with the owner's approval, the earlier commits were re-authored to the owner's identity and `main` was force-pushed. Commit contents and messages are unchanged.
+- **PayPal SDK logging is off.** At `LogLevel.Error` the SDK still printed every successful request prefixed "error:", which read like failures.

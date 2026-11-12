@@ -49,15 +49,19 @@ Requirements: Node 20.9 or newer. Mock mode makes no calls to PayPal or Gemini (
 "Real" means the call went to PayPal's sandbox or to Google's Gemini API. "Simulated" means Rebuttal replayed it from its built-in simulator or from a recorded earlier response. The screen always labels which one you're seeing.
 
 **Read this first: the current status (12 Nov 2026).**
-- **PayPal:** the sandbox credentials set up on 12 Nov are rejected by PayPal (`invalid_client`). Until they're replaced, **every PayPal call in the app is simulated**, and the PayPal chip says why. The "Live" rows below were verified on 4–5 Nov with an earlier sandbox app.
-- **Gemini:** the current key works, but at the time of testing `gemini-3.8-flash` was overloaded and `gemini-2.5-flash` is "no longer available to new users" for this key. So the app ended up on **recorded responses** (real Gemini runs recorded earlier), labelled on screen. `gemini-3.5-flash` and `gemini-3.6-flash` do work with this key; see `AI_FALLBACK_MODEL` below.
+- **PayPal:** the current sandbox app works.
+  - Real: login, the shop creating orders, card capture and adding tracking (`scripts/verify-tracking.ts`).
+  - Still simulated: every **dispute** step, because no buyer has yet made a disputable payment to this app's seller account (`sb-vgizy53112725@business.example.com`).
+- **Gemini:** the current key works.
+  - In the live run, the newest Flash model (`gemini-3.8-flash`) was skipped and `gemini-3.5-flash` answered both disputes. The top bar showed `AI: Gemini live · gemini-3.5-flash`.
+  - Live answers vary between runs: this run offered 20% on the bowl ($52.00 USD kept), while the recorded run offered 40%.
 
 Details in [DECISIONS.md](DECISIONS.md).
 
 | Part | Live? | Notes |
 | --- | --- | --- |
-| Gemini agent: tool loop, carrier screenshot/PDF reading, photo comparison | **Real** when a model answers (verified 4–5 Nov) | Order: newest Flash (`gemini-3.8-flash`), then `gemini-2.5-flash`, then recorded responses. The top bar names the model in use, or says "recorded responses" and why. |
-| PayPal OAuth, Orders v2 create, card capture, order **tracking** | **Real** (verified 4–5 Nov, earlier credentials) | `scripts/verify-tracking.ts` captures a test-card payment and adds a tracker (201). Simulated with today's rejected credentials. |
+| Gemini agent: tool loop, carrier screenshot/PDF reading, photo comparison | **Real** when a model answers (verified 12 Nov) | Order: newest Flash (`gemini-3.8-flash`), then `gemini-3.5-flash`, then recorded responses. The top bar names the model in use, or says "recorded responses" and why. |
+| PayPal OAuth, Orders v2 create, card capture, order **tracking** | **Real** (verified 12 Nov) | `scripts/verify-tracking.ts` captures a test-card payment and adds a tracker (201). The shop's `POST /v2/checkout/orders` also ran live. |
 | PayPal JS SDK Smart Buttons on `/shop` | **Real** (renders; verified 4–5 Nov) | A full buyer checkout through the buttons needs a sandbox buyer login, which we haven't had, so it is untested. |
 | Disputes: create as buyer | **Reached, refused** | Authorised and validated, but every transaction tried was ineligible. The one supplied was paid *from* the shop *to* the buyer, and was still pending. |
 | Disputes: show, provide-evidence, make-offer, accept-claim, adjudicate, accept-offer | **Simulated** | Written against the official schema and wired to go live for any dispute that exists in the sandbox. None has run live, because no dispute could be created. |
@@ -121,10 +125,10 @@ submit_recommendation ─── Recommendation (zod): action, confidence, reason
 - **The rules decide what counts.** `src/lib/rules.ts` maps each dispute reason to the evidence that answers it (critical / strong / supporting) and gives a baseline action. The screen shows whether the agent agrees ("✓ Rules table agrees").
 - **Code does the facts and the money.** Address matching, tracking-number matching and "days between delivery and claim" are computed in code and handed to the model. The model proposes an offer *percentage*; the server converts it to integer minor units and clamps it below the disputed amount.
 - **Structured, validated output only.** Every model output is a tool call validated by a zod schema. Nothing is parsed from free text.
-- **Fallback order.** Gemini's newest Flash model (`gemini-3.8-flash`), then `gemini-2.5-flash`, then **recorded responses** (real Gemini runs saved earlier in `src/lib/ai/recorded/`).
+- **Fallback order.** Gemini's newest Flash model (`gemini-3.8-flash`), then `gemini-3.5-flash`, then **recorded responses** (real Gemini runs saved earlier in `src/lib/ai/recorded/`).
   - A model moves on to the next step when it's overloaded (503), out of quota (429) or not offered to your key (404).
   - The top bar shows `AI: Gemini live · <model>`, or `AI: recorded responses (Gemini unavailable)` with the reason on hover, and the agent panel says the same.
-  - `AI_MODEL` replaces the first model and `AI_FALLBACK_MODEL` the second. New Gemini keys can't use `gemini-2.5-flash` (404), so with such a key set `AI_FALLBACK_MODEL=gemini-3.5-flash` if you want a live second step.
+  - `AI_MODEL` replaces the first model and `AI_FALLBACK_MODEL` the second. (`gemini-2.5-flash` was the first choice for the second step, but new Gemini keys get a 404 from it.)
   - If there's no recording either (for example after uploading new evidence), the rules table decides and the result is labelled "Rules only".
 - **Free-tier aware.** Requests are capped at 10 per minute, and vision reads and whole analyses are cached, so a demo reset doesn't spend quota.
 - **Live runs can be slow.** When the first model is busy, an analysis can take a minute or more before it falls back.
