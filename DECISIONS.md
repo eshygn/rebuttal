@@ -178,3 +178,15 @@ A check of the brief and the Definition of Done against what the code does, run 
   - Results: fight (95%) and a 20% offer, $136.00 USD kept in total. Live offers vary between runs; the recorded run uses 40%.
 - **History:** with the owner's approval, the earlier commits were re-authored to the owner's identity and `main` was force-pushed. Commit contents and messages are unchanged.
 - **PayPal SDK logging is off.** At `LogLevel.Error` the SDK still printed every successful request prefixed "error:", which read like failures.
+
+**Second buyer transaction, 12 Nov: `03W14967454290406`. Refused, nothing created.**
+- The buyer email is now the personal account, `sb-tqii…@personal.example.com`.
+- The preflight lookup found a **completed $500.00 USD payment *to* that personal account**, so it was sent from the business account to the buyer: the wrong direction for a dispute.
+- `POST /v1/customer/disputes` then failed earlier than before, at the buyer identity: `400 invalid_request: "No permissions to set target_client_id"`.
+  - This is the `PayPal-Auth-Assertion` being refused. PayPal's set-up page requires the sandbox buyer to give the REST app consent once ("Log in with PayPal" with the `disputes/create` scope).
+  - The app's token already has the `disputes/create` scope, so consent is the missing piece. We can't confirm consent is the *only* missing piece until a run gets past it.
+- Both responses are saved, redacted, in `fixtures/paypal/recorded/03W14967454290406-*.json` and logged under `attempts` in the manifest.
+- **Fixed alongside:**
+  - `PayPalApiError` now reads PayPal's OAuth-shaped errors (`error` / `error_description`) as well as the REST shape; before, this refusal printed blank.
+  - The script and the app's call log now explain this refusal in plain English.
+  - Two tests cover both error shapes.

@@ -73,6 +73,16 @@ export async function preflight(transactionId: string, buyerEmail = env.paypalBu
   }
 }
 
+/** Plain-English reading of a create-dispute refusal, for the script and the call log. */
+export function explainCreateRefusal(body: unknown): string | null {
+  const b = body as { error_description?: string; details?: { issue?: string }[] } | null;
+  if (/target_client_id/i.test(b?.error_description ?? ""))
+    return "PayPal would not let this app act as the buyer (PayPal-Auth-Assertion refused). The sandbox buyer has to give the app consent once, through \"Log in with PayPal\" with the disputes/create scope (developer.paypal.com/disputes/set-up#get-buyer-consent).";
+  if (b?.details?.[0]?.issue === "TRANSACTION_NOT_ELIGIBLE")
+    return "PayPal says this payment can't be disputed by this buyer (see the payment check above).";
+  return null;
+}
+
 /** Mask sandbox account emails and IDs before a response is committed as a fixture. */
 export function redact<T>(value: T): T {
   return JSON.parse(

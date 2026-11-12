@@ -262,14 +262,13 @@ In mock mode, everything PayPal-related on screen is simulated. Nothing pretends
 ## 7. Anything remaining
 
 - [ ] **Run the sandbox lifecycle live.**
-  - *Why not done:* the transaction you sent (`3KV701938H745371C`) was refused, and the script found three reasons (details in DECISIONS.md):
-    - it's £40 paid *to* the personal account, not *to* our business account;
-    - it's still pending;
-    - `PAYPAL_SANDBOX_BUYER_EMAIL` is set to the business account.
+  - *Why not done:* both transactions tried so far were refused (details in DECISIONS.md):
+    - **4 Nov** (`3KV701938H745371C`): wrong direction and still pending.
+    - **12 Nov** (`03W14967454290406`): $500.00 USD paid *to* the personal account, so the wrong way round again. PayPal also refused to let the app act as the buyer, because the buyer hasn't given the app consent ("Log in with PayPal").
   - *You:*
-    1. set `PAYPAL_SANDBOX_BUYER_EMAIL` to the personal account (`sb-3j7y…@personal.example.com`) in the environment settings;
-    2. log in at sandbox.paypal.com **as that personal account** and send $84.00 USD **to** `sb-otkh…@business.example.com` (the account that owns the REST app);
-    3. copy the transaction ID from the personal account's activity page.
+    1. give buyer consent once (the steps are in the chat of 12 Nov and in DECISIONS.md);
+    2. log in at sandbox.paypal.com **as the personal account** (`sb-tqii…@personal.example.com`) and send $84.00 USD **to** `sb-vgizy…@business.example.com`;
+    3. copy that payment's transaction ID from the personal account's activity page.
   - *Then:* `npx tsx scripts/sandbox-lifecycle.ts <TRANSACTION_ID>`, then commit `fixtures/paypal/lifecycle/` and update DECISIONS.md.
 - [ ] **Bind the demo story to real sandbox disputes** (optional, so the video shows LIVE badges).
   - *You:* make two buyer payments ($84.00 and $65.00 USD).

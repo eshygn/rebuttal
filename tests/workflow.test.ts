@@ -144,3 +144,21 @@ describe("sandbox preflight", () => {
     });
   });
 });
+
+describe("create-dispute refusals", () => {
+  it("reads PayPal's OAuth-shaped error and explains the missing buyer consent (seen 12 Nov 2026)", async () => {
+    const { PayPalApiError } = await import("@/lib/paypal/http");
+    const { explainCreateRefusal } = await import("@/lib/paypal/preflight");
+    const body = { error: "invalid_request", error_description: "No permissions to set target_client_id" };
+    const e = new PayPalApiError(400, body, "/v1/customer/disputes");
+    expect(e.message).toContain("No permissions to set target_client_id");
+    expect(e.issue).toBe("invalid_request: No permissions to set target_client_id");
+    expect(explainCreateRefusal(body)).toMatch(/consent/);
+  });
+
+  it("still reads the REST-shaped error", async () => {
+    const { PayPalApiError } = await import("@/lib/paypal/http");
+    const e = new PayPalApiError(400, { name: "INVALID_REQUEST", details: [{ issue: "TRANSACTION_NOT_ELIGIBLE" }] }, "/v1/customer/disputes");
+    expect(e.issue).toBe("TRANSACTION_NOT_ELIGIBLE");
+  });
+});

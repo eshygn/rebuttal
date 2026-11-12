@@ -104,7 +104,12 @@ async function main() {
         const err = e as { status?: number; body?: { debug_id?: string; details?: { issue?: string }[] }; message: string };
         if (err.body) recordAside(file.replace(/^\d+[a-z]?-/, "").replace(".json", ".error"), err.body);
         attempt.refused_at = name;
-        attempt.issue = err.body?.details?.[0]?.issue ?? String(err.status);
+        attempt.issue = (err as { issue?: string }).issue ?? err.body?.details?.[0]?.issue ?? String(err.status);
+        const why = (await import("../src/lib/paypal/preflight")).explainCreateRefusal(err.body);
+        if (why) {
+          console.log(`    ⚠ ${why}`);
+          attempt.diagnosis.push(why);
+        }
         attempt.debug_id = err.body?.debug_id;
         console.log(`    ↳ sandbox refused: ${err.message}`);
         console.log(`    ↳ replaying this and the remaining steps from fixtures`);

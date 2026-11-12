@@ -10,7 +10,7 @@ import { formatMoney, fromPayPal as moneyFrom, toPayPal } from "./money";
 import * as live from "./paypal/disputes";
 import { paypalLive, readDispute, runAction } from "./paypal/gateway";
 import { PayPalApiError } from "./paypal/http";
-import { preflight } from "./paypal/preflight";
+import { explainCreateRefusal, preflight } from "./paypal/preflight";
 import {
   simAcceptClaim,
   simAcceptOffer,
@@ -76,7 +76,9 @@ export async function openScenarioDispute(key: string): Promise<{ id: string; mo
       });
       db().prepare("UPDATE orders SET buyer_transaction_id = ? WHERE id = ?").run(txn, o.id);
     } catch (e) {
-      note = `Sandbox create-dispute refused (${e instanceof PayPalApiError ? (e.issue ?? e.status) : (e as Error).message})${diagnosis.length ? `: ${diagnosis.join(" ")}` : ""} Simulated instead.`;
+      const why = e instanceof PayPalApiError ? explainCreateRefusal(e.body) : null;
+      const reasons = [...diagnosis, ...(why ? [why] : [])];
+      note = `Sandbox create-dispute refused (${e instanceof PayPalApiError ? (e.issue ?? e.status) : (e as Error).message})${reasons.length ? `: ${reasons.join(" ")}` : ""} Simulated instead.`;
     }
   } else {
     note = txn ? "PayPal not reachable; simulated" : "No sandbox transaction configured for this dispute; simulated";

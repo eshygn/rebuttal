@@ -32,13 +32,15 @@ export class PayPalApiError extends Error {
     public body: unknown,
     public path: string,
   ) {
-    const b = body as { name?: string; message?: string; details?: { issue?: string }[] } | null;
+    // PayPal uses two error shapes: REST ({name, details[].issue}) and OAuth ({error, error_description}).
+    const b = body as { name?: string; message?: string; details?: { issue?: string }[]; error?: string; error_description?: string } | null;
     const issue = b?.details?.map((d) => d.issue).filter(Boolean).join(", ");
-    super(`PayPal ${status} on ${path}: ${b?.name ?? ""} ${issue || b?.message || ""}`.trim());
+    const what = b?.name ? `${b.name} ${issue || b.message || ""}` : b?.error ? `${b.error}: ${b.error_description ?? ""}` : "";
+    super(`PayPal ${status} on ${path}: ${what}`.trim());
   }
   get issue(): string | undefined {
-    const b = this.body as { details?: { issue?: string }[] } | null;
-    return b?.details?.[0]?.issue;
+    const b = this.body as { details?: { issue?: string }[]; error?: string; error_description?: string } | null;
+    return b?.details?.[0]?.issue ?? (b?.error ? `${b.error}: ${b.error_description ?? ""}`.trim() : undefined);
   }
 }
 
