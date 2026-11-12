@@ -2,7 +2,7 @@
  * Orders v2 and order tracking, through the official PayPal Server SDK.
  * We keep the raw JSON body (PayPal's snake_case shape) for storage and display.
  */
-import { Client, Environment, LogLevel, OrdersController, CheckoutPaymentIntent, ShipmentCarrier, type ApiResponse } from "@paypal/paypal-server-sdk";
+import { Client, Environment, OrdersController, CheckoutPaymentIntent, ShipmentCarrier, type ApiResponse } from "@paypal/paypal-server-sdk";
 import { recordCall } from "../calls";
 import { env } from "../env";
 import { toPayPalValue } from "../money";
@@ -14,7 +14,6 @@ function orders(): OrdersController {
     clientCredentialsAuthCredentials: { oAuthClientId: env.paypalClientId, oAuthClientSecret: env.paypalClientSecret },
     environment: Environment.Sandbox,
     timeout: 30_000,
-    logging: { logLevel: LogLevel.Error },
   });
   return new OrdersController(client);
 }

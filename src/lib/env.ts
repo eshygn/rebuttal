@@ -19,13 +19,14 @@ export const hasAIKey = () => !env.forceMock && !!env.googleKey;
 
 /**
  * The model order, as the project owner specified: Gemini's newest Flash model first, then
- * gemini-2.5-flash, then (outside this list) recorded responses. "Newest Flash" was
- * gemini-3.8-flash in the Gemini API model list on 2026-11-12. AI_MODEL overrides the first
- * entry and AI_FALLBACK_MODEL the second; e.g. keys created after 2.5 was retired for new users
- * get a 404 from gemini-2.5-flash and can set AI_FALLBACK_MODEL to a model they can use.
+ * gemini-3.5-flash, then (outside this list) recorded responses. "Newest Flash" was
+ * gemini-3.8-flash in the Gemini API model list on 2026-11-12. The owner first asked for
+ * gemini-2.5-flash as the second step, but it returns 404 ("no longer available to new users")
+ * for the project's key, so they chose gemini-3.5-flash instead. AI_MODEL overrides the first
+ * entry and AI_FALLBACK_MODEL the second.
  */
 export const NEWEST_FLASH = "gemini-3.8-flash";
-export const DEFAULT_FALLBACK_MODEL = "gemini-2.5-flash";
+export const DEFAULT_FALLBACK_MODEL = "gemini-3.5-flash";
 
 export function aiModelChain(): string[] {
   const first = env.aiModel || NEWEST_FLASH;
