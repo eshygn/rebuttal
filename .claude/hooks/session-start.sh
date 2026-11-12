@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs at the start of every Claude Code session in this repo.
+# Runs at the start of every coding-assistant session in this repo.
 # Commits in this project are made as the project owner, never as an assistant.
 set -euo pipefail
 cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel)}"
