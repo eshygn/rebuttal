@@ -18,8 +18,7 @@ Built for small online sellers who take PayPal: independent shops, marketplace s
 
 ## Judge quickstart
 
-**Hosted demo:** `https://rebuttal.onrender.com` *(placeholder, replaced at submission)*
-> It runs on Render's free plan, so the first load can take about a minute while the instance wakes up.
+**Hosted demo:** not deployed yet. `render.yaml` is ready for Render's free plan (first load there can take about a minute to wake). Until then, run it locally with the one command below.
 
 **Run it locally in mock mode (no keys needed):**
 
